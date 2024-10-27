@@ -4,5 +4,9 @@
 <dict>
 	<key>MKDirectionsApplicationSupportedModes</key>
 	<array/>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>This app needs your location to find nearby landmarks.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>This app needs your location to find nearby landmarks.</string>
 </dict>
 </plist>
