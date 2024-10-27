@@ -18,7 +18,6 @@ struct MonumentView: View {
             Text("You're at the Eiffel Tower")
         }
     }
-    
 }
 
 #Preview {
