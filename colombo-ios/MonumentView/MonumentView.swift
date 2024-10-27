@@ -208,6 +208,7 @@ struct PrimaryLandmarkView: View {
     let onPlayTapped: () -> Void
     let onTap: () -> Void
     
+    
     var body: some View {
         VStack(spacing: 16) {
             HStack(alignment: .top) {
@@ -394,6 +395,7 @@ struct ModernLandmarkDetailView: View {
     }
     
     private func formatDetailedAddress(from placemark: MKPlacemark) -> String? {
+        
         let components = [
             placemark.subThoroughfare,
             placemark.thoroughfare,

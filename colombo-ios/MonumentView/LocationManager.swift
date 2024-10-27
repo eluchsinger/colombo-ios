@@ -174,6 +174,13 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     }
                     .map { LandmarkItem(mapItem: $0) }  // Convert to LandmarkItem
                 
+                response.mapItems.forEach { item in
+                    print("Found POI:")
+                    print("- Identifier: \(String(describing: item.identifier?.rawValue))")
+                    print("- Name: \(item.name ?? "Unknown")")
+                    print("- Coordinates: \(item.placemark.coordinate.latitude), \(item.placemark.coordinate.longitude)")
+                }
+                
                 self?.nearbyLandmarks = nearbyItems
                 if nearbyItems.isEmpty {
                     self?.locationError = "No landmarks found within \(Int(self?.searchRadius ?? 50)) meters"
