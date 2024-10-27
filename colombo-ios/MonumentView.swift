@@ -165,50 +165,57 @@ struct MonumentView: View {
 
 struct PrimaryLandmarkView: View {
     let landmark: MKMapItem
+    @StateObject private var audioPlayer = AudioPlayer()
     let onPlayTapped: () -> Void
     let onTap: () -> Void
     
     var body: some View {
-        VStack(spacing: 16) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(landmark.name ?? "Unknown Landmark")
-                        .font(.title2)
-                        .bold()
-                    
-                    if let subtitle = formatAddress(from: landmark.placemark) {
-                        Text(subtitle)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+            VStack(spacing: 16) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(landmark.name ?? "Unknown Landmark")
+                            .font(.title2)
+                            .bold()
+                        
+                        if let subtitle = formatAddress(from: landmark.placemark) {
+                            Text(subtitle)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
                     }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        if audioPlayer.isPlaying {
+                            audioPlayer.stop()
+                        } else {
+                            audioPlayer.play()
+                        }
+                    }) {
+                        Image(systemName: audioPlayer.isPlaying ? "stop.circle.fill" : "play.circle.fill")
+                            .font(.system(size: 44))
+                            .foregroundColor(.blue)
+                    }
+                    .buttonStyle(.plain)
                 }
                 
-                Spacer()
-                
-                Button(action: onPlayTapped) {
-                    Image(systemName: "play.circle.fill")
-                        .font(.system(size: 44))
+                if let distance = landmark.placemark.location?.distance(from: CLLocation(
+                    latitude: landmark.placemark.coordinate.latitude,
+                    longitude: landmark.placemark.coordinate.longitude
+                )) {
+                    Text(String(format: "%.0f meters away", distance))
+                        .font(.headline)
                         .foregroundColor(.blue)
                 }
-                .buttonStyle(.plain)
             }
-            
-            if let distance = landmark.placemark.location?.distance(from: CLLocation(
-                latitude: landmark.placemark.coordinate.latitude,
-                longitude: landmark.placemark.coordinate.longitude
-            )) {
-                Text(String(format: "%.0f meters away", distance))
-                    .font(.headline)
-                    .foregroundColor(.blue)
-            }
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(16)
+            .shadow(radius: 2)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onTap)
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(16)
-        .shadow(radius: 2)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onTap)
-    }
     
     private func formatAddress(from placemark: MKPlacemark) -> String? {
         let components = [

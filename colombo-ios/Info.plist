@@ -8,5 +8,9 @@
     <string>This app needs your location to find nearby landmarks.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>This app needs your location to find nearby landmarks.</string>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>audio</string>
+    </array>
 </dict>
 </plist>
