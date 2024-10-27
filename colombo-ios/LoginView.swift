@@ -25,9 +25,10 @@ struct LoginView: View {
                         .padding(.bottom, 100.0)
                     
                     TextField("Email", text: $email)
-                        .textContentType(.emailAddress)
+                        .textContentType(.username)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
+                        .autocorrectionDisabled()
                         .padding()
                         .submitLabel(.next) // Shows "next" on keyboard
                         .onSubmit {
@@ -37,6 +38,7 @@ struct LoginView: View {
                     
                     SecureField("Password", text: $password)
                         .textContentType(.password)
+                        .autocorrectionDisabled()
                         .padding()
                         .submitLabel(.go) // Shows "go" on keyboard
                         .onSubmit {
@@ -61,9 +63,6 @@ struct LoginView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
                     .cornerRadius(8)
                     .disabled(isLoading)
                     .padding()
