@@ -55,3 +55,7 @@ struct LoginView: View {
     }
     
 }
+
+#Preview {
+    LoginView(isLoggedIn: .constant(true))
+}

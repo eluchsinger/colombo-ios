@@ -414,6 +414,9 @@
 				INFOPLIST_FILE = "colombo-ios/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Colombo Guide";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to display the monument details.";
+				INFOPLIST_KEY_NSLocationUsageDescription = "Colombo needs your location to provide the stories about the places you visit";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your location to display the monument details.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -448,6 +451,9 @@
 				INFOPLIST_FILE = "colombo-ios/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Colombo Guide";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to display the monument details.";
+				INFOPLIST_KEY_NSLocationUsageDescription = "Colombo needs your location to provide the stories about the places you visit";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your location to display the monument details.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
