@@ -15,8 +15,6 @@ struct LoginView: View {
     
     var body: some View {
             ZStack {
-                Color(red: 252/255, green: 248/255, blue: 245/255)
-                    .ignoresSafeArea()
                 
                 VStack {
                     Image("BigLogo")
