@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		C8A329762CCED84300D62D98 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = C8A329752CCED84300D62D98 /* Auth */; };
+		C8A329812CCEE89900D62D98 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = C8A329802CCEE89900D62D98 /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +70,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C8A329812CCEE89900D62D98 /* Supabase in Frameworks */,
 				C8A329762CCED84300D62D98 /* Auth in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -96,6 +98,7 @@
 				C8834E1A2CCEAB1C0093ABDD /* colombo-ios */,
 				C8834E2B2CCEAB1E0093ABDD /* colombo-iosTests */,
 				C8834E352CCEAB1E0093ABDD /* colombo-iosUITests */,
+				C8A3297F2CCEE89900D62D98 /* Frameworks */,
 				C8834E192CCEAB1C0093ABDD /* Products */,
 			);
 			sourceTree = "<group>";
@@ -108,6 +111,13 @@
 				C8834E322CCEAB1E0093ABDD /* colombo-iosUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		C8A3297F2CCEE89900D62D98 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -131,6 +141,7 @@
 			name = "colombo-ios";
 			packageProductDependencies = (
 				C8A329752CCED84300D62D98 /* Auth */,
+				C8A329802CCEE89900D62D98 /* Supabase */,
 			);
 			productName = "colombo-ios";
 			productReference = C8834E182CCEAB1C0093ABDD /* colombo-ios.app */;
@@ -423,9 +434,9 @@
 				INFOPLIST_FILE = "colombo-ios/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Colombo Guide";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to display the monument details.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app needs your location to find nearby landmarks.";
 				INFOPLIST_KEY_NSLocationUsageDescription = "Colombo needs your location to provide the stories about the places you visit";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your location to display the monument details.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location to find nearby landmarks.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -460,9 +471,9 @@
 				INFOPLIST_FILE = "colombo-ios/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Colombo Guide";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to display the monument details.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app needs your location to find nearby landmarks.";
 				INFOPLIST_KEY_NSLocationUsageDescription = "Colombo needs your location to provide the stories about the places you visit";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We need your location to display the monument details.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location to find nearby landmarks.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -609,6 +620,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C8A329742CCED84300D62D98 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Auth;
+		};
+		C8A329802CCEE89900D62D98 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C8A329742CCED84300D62D98 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -22,7 +22,6 @@ struct colombo_iosApp: App {
         }
     }
     
-    
     private func setupAudio() {
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
