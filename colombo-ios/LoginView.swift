@@ -14,54 +14,64 @@ struct LoginView: View {
     @State private var errorMessage: String?
     
     var body: some View {
-        ZStack {
-            Color(red: 252/255, green: 248/255, blue: 245/255)
-                .ignoresSafeArea()
-            
-            VStack {
-                Image("BigLogo")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 350.0, height: 100.0)
-                    .scaledToFit()
-                    .padding(.bottom, 100.0)
+            ZStack {
+                Color(red: 252/255, green: 248/255, blue: 245/255)
+                    .ignoresSafeArea()
                 
-                TextField("Email", text: $email)
-                    .textContentType(.emailAddress)
-                    .keyboardType(.emailAddress)
-                    .autocapitalization(.none)
-                    .padding()
-                
-                SecureField("Password", text: $password)
-                    .textContentType(.password)
-                    .padding()
-                
-                if let errorMessage = errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                        .font(.caption)
-                }
-                
-                Button(action: {
-                    signIn()
-                }) {
-                    if isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    } else {
-                        Text("Log In")
+                VStack {
+                    Image("BigLogo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 350.0, height: 100.0)
+                        .scaledToFit()
+                        .padding(.bottom, 100.0)
+                    
+                    TextField("Email", text: $email)
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .padding()
+                        .submitLabel(.next) // Shows "next" on keyboard
+                        .onSubmit {
+                            // Move focus to password field
+                            // Note: This requires iOS 15+
+                        }
+                    
+                    SecureField("Password", text: $password)
+                        .textContentType(.password)
+                        .padding()
+                        .submitLabel(.go) // Shows "go" on keyboard
+                        .onSubmit {
+                            // Execute login when return is pressed on password field
+                            signIn()
+                        }
+                    
+                    if let errorMessage = errorMessage {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .font(.caption)
                     }
+                    
+                    Button(action: {
+                        signIn()
+                    }) {
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("Log In")
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                    .disabled(isLoading)
+                    .padding()
                 }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-                .disabled(isLoading)
                 .padding()
             }
-            .padding()
-        }
     }
     
     private func signIn() {
