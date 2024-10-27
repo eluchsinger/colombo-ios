@@ -117,11 +117,15 @@ struct MonumentView: View {
     private var landmarkListView: some View {
         List {
             ForEach(locationManager.nearbyLandmarks) { landmark in
-                LandmarkRowView(landmark: landmark.mapItem)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedLandmark = landmark
-                    }
+                LandmarkRowView(landmark: landmark.mapItem) {
+                    // Handle play button tap here
+                    print("Play tapped for \(landmark.mapItem.name ?? "Unknown")")
+                    // Add your play functionality here
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectedLandmark = landmark
+                }
             }
         }
         .listStyle(PlainListStyle())
@@ -139,26 +143,38 @@ struct MonumentView: View {
 
 struct LandmarkRowView: View {
     let landmark: MKMapItem
+    let onPlayTapped: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(landmark.name ?? "Unknown Landmark")
-                .font(.headline)
-            
-            if let subtitle = formatAddress(from: landmark.placemark) {
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(landmark.name ?? "Unknown Landmark")
+                    .font(.headline)
+                
+                if let subtitle = formatAddress(from: landmark.placemark) {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                if let distance = landmark.placemark.location?.distance(from: CLLocation(
+                    latitude: landmark.placemark.coordinate.latitude,
+                    longitude: landmark.placemark.coordinate.longitude
+                )) {
+                    Text(String(format: "%.0f meters away", distance))
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                }
             }
             
-            if let distance = landmark.placemark.location?.distance(from: CLLocation(
-                latitude: landmark.placemark.coordinate.latitude,
-                longitude: landmark.placemark.coordinate.longitude
-            )) {
-                Text(String(format: "%.0f meters away", distance))
-                    .font(.caption)
+            Spacer()
+            
+            Button(action: onPlayTapped) {
+                Image(systemName: "play.circle.fill")
+                    .font(.title)
                     .foregroundColor(.blue)
             }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 8)
     }
@@ -174,6 +190,8 @@ struct LandmarkRowView: View {
         return components.isEmpty ? nil : components.joined(separator: ", ")
     }
 }
+
+
 @available(iOS 17.0, *)
 struct ModernLandmarkDetailView: View {
     let landmark: MKMapItem
