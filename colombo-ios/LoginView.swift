@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct LoginView: View {
+    @Binding var isLoggedIn: Bool
+
     @State private var email = ""
     @State private var password = ""
 
@@ -37,6 +39,7 @@ struct LoginView: View {
                 Button(action: {
                     // Add login action here
                     print("Logging in with email: \(email), password: \(password)")
+                    isLoggedIn = true;
                 }) {
                     Text("Log In")
                         .frame(maxWidth: .infinity)
@@ -51,8 +54,4 @@ struct LoginView: View {
         }
     }
     
-}
-
-#Preview {
-    LoginView()
 }
