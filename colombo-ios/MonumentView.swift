@@ -1,18 +1,10 @@
 import SwiftUI
 import MapKit
 
-// Extension to make MKMapItem identifiable
-extension MKMapItem: Identifiable {
-    public var id: String {
-        // Create a unique identifier using the placemark's coordinates and name
-        "\(placemark.coordinate.latitude),\(placemark.coordinate.longitude):\(name ?? "")"
-    }
-}
-
 struct MonumentView: View {
     @Binding var isLoggedIn: Bool
     @StateObject private var locationManager = LocationManager()
-    @State private var selectedLandmark: MKMapItem?
+    @State private var selectedLandmark: LandmarkItem?  // Changed type
     
     var body: some View {
         NavigationView {
@@ -38,10 +30,9 @@ struct MonumentView: View {
                 trailing: logoutButton
             )
             .sheet(item: $selectedLandmark) { landmark in
-                LandmarkDetailView(landmark: landmark)
+                ModernLandmarkDetailView(landmark: landmark.mapItem)
             }
             .onAppear {
-                // Only start updating if we have permission
                 if locationManager.authorizationStatus == .authorizedWhenInUse ||
                    locationManager.authorizationStatus == .authorizedAlways {
                     locationManager.startUpdatingLocation()
@@ -52,6 +43,7 @@ struct MonumentView: View {
             }
         }
     }
+    
     private var requestLocationView: some View {
         VStack(spacing: 16) {
             Image(systemName: "location.circle")
@@ -124,8 +116,8 @@ struct MonumentView: View {
     
     private var landmarkListView: some View {
         List {
-            ForEach(locationManager.nearbyLandmarks, id: \.id) { landmark in
-                LandmarkRowView(landmark: landmark)
+            ForEach(locationManager.nearbyLandmarks) { landmark in
+                LandmarkRowView(landmark: landmark.mapItem)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         selectedLandmark = landmark
@@ -182,20 +174,42 @@ struct LandmarkRowView: View {
         return components.isEmpty ? nil : components.joined(separator: ", ")
     }
 }
-
-struct LandmarkDetailView: View {
+@available(iOS 17.0, *)
+struct ModernLandmarkDetailView: View {
     let landmark: MKMapItem
     @Environment(\.dismiss) private var dismiss
+    @State private var cameraPosition: MapCameraPosition
+    
+    init(landmark: MKMapItem) {
+        self.landmark = landmark
+        self._cameraPosition = State(initialValue: .region(MKCoordinateRegion(
+            center: landmark.placemark.coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
+        )))
+    }
     
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    // Map snapshot
-                    Map(coordinateRegion: .constant(MKCoordinateRegion(
-                        center: landmark.placemark.coordinate,
-                        span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
-                    )))
+                    // Modern Map implementation
+                    Map(position: $cameraPosition) {
+                        Annotation(
+                            landmark.name ?? "Location",
+                            coordinate: landmark.placemark.coordinate,
+                            anchor: .bottom
+                        ) {
+                            Image(systemName: "mappin.circle.fill")
+                                .font(.title)
+                                .foregroundColor(.red)
+                                .background(Color.white.clipShape(Circle()))
+                        }
+                    }
+                    .mapStyle(.standard(elevation: .realistic))
+                    .mapControls {
+                        MapCompass()
+                        MapScaleView()
+                    }
                     .frame(height: 200)
                     .cornerRadius(12)
                     .padding(.horizontal)
@@ -253,7 +267,7 @@ struct LandmarkDetailView: View {
     
     private func formatDetailedAddress(from placemark: MKPlacemark) -> String? {
         let components = [
-            placemark.subThoroughfare,  // Changed from streetNumber
+            placemark.subThoroughfare,
             placemark.thoroughfare,
             placemark.locality,
             placemark.administrativeArea,

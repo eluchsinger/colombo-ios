@@ -3,15 +3,18 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
+
+// Wrapper struct for MKMapItem
+
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     private var lastFetchTime: Date?
     private let fetchInterval: TimeInterval = 5
     private let searchRadius: CLLocationDistance = 50
     
+    @Published var nearbyLandmarks: [LandmarkItem] = []  // Changed type
     @Published var location: CLLocationCoordinate2D? = nil
     @Published var locationError: String? = nil
-    @Published var nearbyLandmarks: [MKMapItem] = []
     @Published var isSearching: Bool = false
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
     
@@ -130,62 +133,63 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     private func fetchNearbyLandmarks() {
-        guard let userLocation = location else {
-            locationError = "No location available"
-            return
-        }
-        
-        isSearching = true
-        
-        let request = MKLocalPointsOfInterestRequest(center: userLocation, radius: searchRadius)
-        request.pointOfInterestFilter = MKPointOfInterestFilter(including: [.landmark])
-        
-        let search = MKLocalSearch(request: request)
-        
-        search.start { [weak self] response, error in
-            DispatchQueue.main.async {
-                self?.isSearching = false
-                
-                if let error = error {
-                    self?.locationError = "Search error: \(error.localizedDescription)"
-                    self?.nearbyLandmarks = []
-                    return
-                }
-                
-                guard let response = response else {
-                    self?.locationError = "No landmarks found nearby"
-                    self?.nearbyLandmarks = []
-                    return
-                }
-                
-                guard let userCoordinate = self?.location else { return }
-                let userLoc = CLLocation(
-                    latitude: userCoordinate.latitude,
-                    longitude: userCoordinate.longitude
-                )
-                
-                let nearbyItems = response.mapItems
-                    .filter { mapItem in
-                        guard let itemLocation = mapItem.placemark.location else { return false }
-                        return itemLocation.distance(from: userLoc) <= (self?.searchRadius ?? 50)
+            guard let userLocation = location else {
+                locationError = "No location available"
+                return
+            }
+            
+            isSearching = true
+            
+            let request = MKLocalPointsOfInterestRequest(center: userLocation, radius: searchRadius)
+            request.pointOfInterestFilter = MKPointOfInterestFilter(including: [.landmark])
+            
+            let search = MKLocalSearch(request: request)
+            
+            search.start { [weak self] response, error in
+                DispatchQueue.main.async {
+                    self?.isSearching = false
+                    
+                    if let error = error {
+                        self?.locationError = "Search error: \(error.localizedDescription)"
+                        self?.nearbyLandmarks = []
+                        return
                     }
-                    .sorted { item1, item2 in
-                        guard let loc1 = item1.placemark.location,
-                              let loc2 = item2.placemark.location else { return false }
-                        return loc1.distance(from: userLoc) < loc2.distance(from: userLoc)
+                    
+                    guard let response = response else {
+                        self?.locationError = "No landmarks found nearby"
+                        self?.nearbyLandmarks = []
+                        return
                     }
-                
-                self?.nearbyLandmarks = nearbyItems
-                if nearbyItems.isEmpty {
-                    self?.locationError = "No landmarks found within \(Int(self?.searchRadius ?? 50)) meters"
-                } else {
-                    self?.locationError = nil
+                    
+                    guard let userCoordinate = self?.location else { return }
+                    let userLoc = CLLocation(
+                        latitude: userCoordinate.latitude,
+                        longitude: userCoordinate.longitude
+                    )
+                    
+                    let nearbyItems = response.mapItems
+                        .filter { mapItem in
+                            guard let itemLocation = mapItem.placemark.location else { return false }
+                            return itemLocation.distance(from: userLoc) <= (self?.searchRadius ?? 50)
+                        }
+                        .sorted { item1, item2 in
+                            guard let loc1 = item1.placemark.location,
+                                  let loc2 = item2.placemark.location else { return false }
+                            return loc1.distance(from: userLoc) < loc2.distance(from: userLoc)
+                        }
+                        .map { LandmarkItem(mapItem: $0) }  // Convert to LandmarkItem
+                    
+                    self?.nearbyLandmarks = nearbyItems
+                    if nearbyItems.isEmpty {
+                        self?.locationError = "No landmarks found within \(Int(self?.searchRadius ?? 50)) meters"
+                    } else {
+                        self?.locationError = nil
+                    }
+                    
+                    print("Found \(nearbyItems.count) landmarks within range")
                 }
-                
-                print("Found \(nearbyItems.count) landmarks within range")
             }
         }
-    }
     
     func refreshLandmarks() {
         fetchNearbyLandmarks()
