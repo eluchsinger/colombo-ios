@@ -4,8 +4,6 @@ import MapKit
 import SwiftUI
 
 
-// Wrapper struct for MKMapItem
-
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     private var lastFetchTime: Date?
