@@ -36,7 +36,7 @@ struct MonumentView: View {
             }
             .onAppear {
                 if locationManager.authorizationStatus == .authorizedWhenInUse ||
-                   locationManager.authorizationStatus == .authorizedAlways {
+                    locationManager.authorizationStatus == .authorizedAlways {
                     locationManager.startUpdatingLocation()
                 }
             }
@@ -73,24 +73,24 @@ struct MonumentView: View {
     }
     
     private func performLogout() {
-            isLoggingOut = true
-            
-            Task {
-                do {
-                    try await supabase.auth.signOut()
-                    
-                    await MainActor.run {
-                        isLoggingOut = false
-                        isLoggedIn = false
-                    }
-                } catch {
-                    await MainActor.run {
-                        isLoggingOut = false
-                        logoutError = error.localizedDescription
-                    }
+        isLoggingOut = true
+        
+        Task {
+            do {
+                try await supabase.auth.signOut()
+                
+                await MainActor.run {
+                    isLoggingOut = false
+                    isLoggedIn = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoggingOut = false
+                    logoutError = error.localizedDescription
                 }
             }
         }
+    }
     
     private var requestLocationView: some View {
         VStack(spacing: 16) {
@@ -209,52 +209,52 @@ struct PrimaryLandmarkView: View {
     let onTap: () -> Void
     
     var body: some View {
-            VStack(spacing: 16) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(landmark.name ?? "Unknown Landmark")
-                            .font(.title2)
-                            .bold()
-                        
-                        if let subtitle = formatAddress(from: landmark.placemark) {
-                            Text(subtitle)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                    }
+        VStack(spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(landmark.name ?? "Unknown Landmark")
+                        .font(.title2)
+                        .bold()
                     
-                    Spacer()
-                    
-                    Button(action: {
-                        if audioPlayer.isPlaying {
-                            audioPlayer.stop()
-                        } else {
-                            audioPlayer.play()
-                        }
-                    }) {
-                        Image(systemName: audioPlayer.isPlaying ? "stop.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 44))
-                            .foregroundColor(.blue)
+                    if let subtitle = formatAddress(from: landmark.placemark) {
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                     }
-                    .buttonStyle(.plain)
                 }
                 
-                if let distance = landmark.placemark.location?.distance(from: CLLocation(
-                    latitude: landmark.placemark.coordinate.latitude,
-                    longitude: landmark.placemark.coordinate.longitude
-                )) {
-                    Text(String(format: "%.0f meters away", distance))
-                        .font(.headline)
+                Spacer()
+                
+                Button(action: {
+                    if audioPlayer.isPlaying {
+                        audioPlayer.stop()
+                    } else {
+                        audioPlayer.play()
+                    }
+                }) {
+                    Image(systemName: audioPlayer.isPlaying ? "stop.circle.fill" : "play.circle.fill")
+                        .font(.system(size: 44))
                         .foregroundColor(.blue)
                 }
+                .buttonStyle(.plain)
             }
-            .padding()
-            .background(Color(.secondarySystemBackground))
-            .cornerRadius(16)
-            .shadow(radius: 2)
-            .contentShape(Rectangle())
-            .onTapGesture(perform: onTap)
+            
+            if let distance = landmark.placemark.location?.distance(from: CLLocation(
+                latitude: landmark.placemark.coordinate.latitude,
+                longitude: landmark.placemark.coordinate.longitude
+            )) {
+                Text(String(format: "%.0f meters away", distance))
+                    .font(.headline)
+                    .foregroundColor(.blue)
+            }
         }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(16)
+        .shadow(radius: 2)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
+    }
     
     private func formatAddress(from placemark: MKPlacemark) -> String? {
         let components = [
