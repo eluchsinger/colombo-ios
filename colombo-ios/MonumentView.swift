@@ -114,21 +114,43 @@ struct MonumentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
+    // Update the landmarkListView in MonumentView
     private var landmarkListView: some View {
-        List {
-            ForEach(locationManager.nearbyLandmarks) { landmark in
-                LandmarkRowView(landmark: landmark.mapItem) {
-                    // Handle play button tap here
-                    print("Play tapped for \(landmark.mapItem.name ?? "Unknown")")
-                    // Add your play functionality here
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    selectedLandmark = landmark
+        VStack(spacing: 24) {
+            if let primaryLandmark = locationManager.nearbyLandmarks.first {
+                PrimaryLandmarkView(
+                    landmark: primaryLandmark.mapItem,
+                    onPlayTapped: {
+                        print("Play tapped for \(primaryLandmark.mapItem.name ?? "Unknown")")
+                        // Add your play functionality here
+                    },
+                    onTap: {
+                        selectedLandmark = primaryLandmark
+                    }
+                )
+                .padding(.horizontal)
+                
+                if locationManager.nearbyLandmarks.count > 1,
+                   let secondaryLandmark = locationManager.nearbyLandmarks[safe: 1] {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Next closest")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal)
+                        
+                        SecondaryLandmarkView(
+                            landmark: secondaryLandmark.mapItem,
+                            onTap: {
+                                selectedLandmark = secondaryLandmark
+                            }
+                        )
+                    }
                 }
             }
+            
+            Spacer()
         }
-        .listStyle(PlainListStyle())
+        .padding(.top)
     }
     
     private var logoutButton: some View {
@@ -141,21 +163,75 @@ struct MonumentView: View {
     }
 }
 
-struct LandmarkRowView: View {
+struct PrimaryLandmarkView: View {
     let landmark: MKMapItem
     let onPlayTapped: () -> Void
+    let onTap: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(landmark.name ?? "Unknown Landmark")
+                        .font(.title2)
+                        .bold()
+                    
+                    if let subtitle = formatAddress(from: landmark.placemark) {
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Button(action: onPlayTapped) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 44))
+                        .foregroundColor(.blue)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            if let distance = landmark.placemark.location?.distance(from: CLLocation(
+                latitude: landmark.placemark.coordinate.latitude,
+                longitude: landmark.placemark.coordinate.longitude
+            )) {
+                Text(String(format: "%.0f meters away", distance))
+                    .font(.headline)
+                    .foregroundColor(.blue)
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(16)
+        .shadow(radius: 2)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
+    }
+    
+    private func formatAddress(from placemark: MKPlacemark) -> String? {
+        let components = [
+            placemark.thoroughfare,
+            placemark.locality,
+            placemark.administrativeArea,
+            placemark.postalCode
+        ].compactMap { $0 }
+        
+        return components.isEmpty ? nil : components.joined(separator: ", ")
+    }
+}
+
+struct SecondaryLandmarkView: View {
+    let landmark: MKMapItem
+    let onTap: () -> Void
     
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(landmark.name ?? "Unknown Landmark")
-                    .font(.headline)
-                
-                if let subtitle = formatAddress(from: landmark.placemark) {
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
                 
                 if let distance = landmark.placemark.location?.distance(from: CLLocation(
                     latitude: landmark.placemark.coordinate.latitude,
@@ -169,25 +245,13 @@ struct LandmarkRowView: View {
             
             Spacer()
             
-            Button(action: onPlayTapped) {
-                Image(systemName: "play.circle.fill")
-                    .font(.title)
-                    .foregroundColor(.blue)
-            }
-            .buttonStyle(.plain)
+            Image(systemName: "chevron.right")
+                .foregroundColor(.secondary)
         }
         .padding(.vertical, 8)
-    }
-    
-    private func formatAddress(from placemark: MKPlacemark) -> String? {
-        let components = [
-            placemark.thoroughfare,
-            placemark.locality,
-            placemark.administrativeArea,
-            placemark.postalCode
-        ].compactMap { $0 }
-        
-        return components.isEmpty ? nil : components.joined(separator: ", ")
+        .padding(.horizontal)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
     }
 }
 
@@ -302,6 +366,15 @@ struct ModernLandmarkDetailView: View {
     }
 }
 
+
+// Helper extension for safe array access
+extension Array {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
+
 #Preview {
     MonumentView(isLoggedIn: .constant(true))
 }
+

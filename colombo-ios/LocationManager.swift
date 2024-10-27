@@ -27,7 +27,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.activityType = .otherNavigation
-        locationManager.distanceFilter = 10
+        locationManager.distanceFilter = 10000
         
         // Just store the current status
         authorizationStatus = locationManager.authorizationStatus
