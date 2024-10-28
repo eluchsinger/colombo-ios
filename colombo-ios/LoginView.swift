@@ -24,27 +24,46 @@ struct LoginView: View {
                         .scaledToFit()
                         .padding(.bottom, 100.0)
                     
-                    TextField("Email", text: $email)
-                        .textContentType(.username)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .autocorrectionDisabled()
-                        .padding()
-                        .submitLabel(.next) // Shows "next" on keyboard
-                        .onSubmit {
-                            // Move focus to password field
-                            // Note: This requires iOS 15+
-                        }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Email")
+                            .foregroundColor(.secondary)
+                            .font(.subheadline)
+                        TextField("Enter your email", text: $email)
+                            .textContentType(.username)
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                            .autocorrectionDisabled()
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(.systemGray6))
+                            )
+                            .contentShape(Rectangle())  // Makes entire area tappable
+                            .submitLabel(.next)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 16) // Add margin between email and password fields
                     
-                    SecureField("Password", text: $password)
-                        .textContentType(.password)
-                        .autocorrectionDisabled()
-                        .padding()
-                        .submitLabel(.go) // Shows "go" on keyboard
-                        .onSubmit {
-                            // Execute login when return is pressed on password field
-                            signIn()
-                        }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Password")
+                            .foregroundColor(.secondary)
+                            .font(.subheadline)
+                        SecureField("Enter your password", text: $password)
+                            .textContentType(.password)
+                            .autocorrectionDisabled()
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(.systemGray6))
+                            )
+                            .contentShape(Rectangle())  // Makes entire area tappable
+                            .submitLabel(.go)
+                            .onSubmit {
+                                signIn()
+                            }
+                    }
+                    .padding(.horizontal)
+                    
                     
                     if let errorMessage = errorMessage {
                         Text(errorMessage)
@@ -54,17 +73,20 @@ struct LoginView: View {
                     
                     Button(action: {
                         signIn()
-                    }) {
+                    }, label: {
                         if isLoading {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         } else {
                             Text("Log In")
+                                .frame(maxWidth: .infinity)
                         }
-                    }
+                    })
                     .frame(maxWidth: .infinity)
                     .cornerRadius(8)
                     .disabled(isLoading)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                     .padding()
                 }
                 .padding()
