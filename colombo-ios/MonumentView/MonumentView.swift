@@ -119,6 +119,11 @@ struct MonumentView: View {
 
     private var refreshButton: some View {
         Button(action: {
+            // Stop any playing audio before refreshing
+            if let currentLandmark = locationManager.nearbyLandmarks.first {
+                // This will trigger the onDisappear in PrimaryLandmarkView
+                locationManager.nearbyLandmarks = []
+            }
             locationManager.refreshLandmarks()
         }) {
             Image(systemName: "arrow.clockwise")

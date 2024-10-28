@@ -158,6 +158,9 @@ struct PrimaryLandmarkView: View {
                 loadingState = .idle
             }
         }
+        .onDisappear {
+            audioPlayer.stop()
+        }
     }
 
     private func playAudio() async {

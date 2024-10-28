@@ -206,6 +206,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func refreshLandmarks() {
+        nearbyLandmarks = []
         fetchNearbyLandmarks()
     }
 }
