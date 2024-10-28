@@ -12,7 +12,7 @@ import MapKit
 import SwiftUI
 
 struct LandmarkItem: Identifiable {
-    let id: String            // This will use the MKMapItem identifier
+    let id: String
     let mapItem: MKMapItem
     
     init(mapItem: MKMapItem) {
