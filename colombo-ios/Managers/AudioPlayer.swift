@@ -1,55 +1,104 @@
-import Foundation
 import AVFoundation
 
-class AudioPlayer: NSObject, ObservableObject {
-    private var player: AVAudioPlayer?
-    @Published var isPlaying = false
-    @Published var isLoading = false
-    var onPlaybackFinished: (() -> Void)?
+enum AudioPlayerError: Error {
+    case invalidURL
+    case failedToLoadAsset
     
-    override init() {
-        super.init()
-    }
-    
-    func play(from urlString: String) async throws {
-        await MainActor.run {
-            isLoading = true
+    var localizedDescription: String {
+        switch self {
+        case .invalidURL:
+            return "Invalid audio URL"
+        case .failedToLoadAsset:
+            return "Failed to load audio"
         }
-        
-        defer {
-            Task { @MainActor in
-                isLoading = false
-            }
-        }
-        
-        guard let url = URL(string: urlString) else {
-            throw NSError(domain: "AudioPlayer", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
-        }
-        
-        // Download the audio file
-        let (audioData, _) = try await URLSession.shared.data(from: url)
-        
-        // Initialize and play the audio on the main thread
-        try await MainActor.run {
-            player = try AVAudioPlayer(data: audioData)
-            player?.delegate = self
-            player?.play()
-            isPlaying = true
-        }
-    }
-    
-    func stop() {
-        player?.stop()
-        isPlaying = false
-        onPlaybackFinished?()
     }
 }
 
-extension AudioPlayer: AVAudioPlayerDelegate {
-    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        DispatchQueue.main.async { [weak self] in
-            self?.isPlaying = false
-            self?.onPlaybackFinished?()
+class AudioPlayer: ObservableObject {
+    private var audioPlayer: AVPlayer?
+    private var timeObserver: Any?
+
+    @Published var isPlaying = false
+    @Published var currentTime: Double = 0
+    @Published var duration: Double = 0
+    @Published var playbackRate: Double = 1.0
+
+    var onPlaybackFinished: (() -> Void)?
+
+    func play(from urlString: String) async throws {
+        guard let url = URL(string: urlString) else {
+            throw AudioPlayerError.invalidURL
+        }
+
+        let asset = AVURLAsset(url: url)
+
+        do {
+            let duration = try await asset.load(.duration)
+
+            await MainActor.run {
+                self.duration = duration.seconds
+                self.currentTime = 0
+
+                let playerItem = AVPlayerItem(asset: asset)
+                self.audioPlayer = AVPlayer(playerItem: playerItem)
+
+                // Add time observer
+                self.timeObserver = self.audioPlayer?.addPeriodicTimeObserver(
+                    forInterval: CMTime(seconds: 0.1, preferredTimescale: 600),
+                    queue: .main
+                ) { [weak self] time in
+                    self?.currentTime = time.seconds
+                }
+
+                // Add completion observer
+                NotificationCenter.default.addObserver(
+                    forName: .AVPlayerItemDidPlayToEndTime,
+                    object: playerItem,
+                    queue: .main
+                ) { [weak self] _ in
+                    self?.isPlaying = false
+                    self?.currentTime = 0
+                    self?.onPlaybackFinished?()
+                }
+
+                self.audioPlayer?.play()
+                self.isPlaying = true
+            }
+        } catch {
+            throw AudioPlayerError.failedToLoadAsset
+        }
+    }
+
+    func stop() {
+        audioPlayer?.pause()
+        audioPlayer?.seek(to: .zero)
+        isPlaying = false
+        currentTime = 0
+        onPlaybackFinished?()
+    }
+
+    func pause() {
+        audioPlayer?.pause()
+        isPlaying = false
+    }
+
+    func resume() {
+        audioPlayer?.play()
+        isPlaying = true
+    }
+
+    func seek(to time: Double) {
+        audioPlayer?.seek(to: CMTime(seconds: time, preferredTimescale: 600))
+    }
+
+    func setPlaybackRate(_ rate: Double) {
+        audioPlayer?.rate = Float(rate)
+        playbackRate = rate
+    }
+
+    deinit {
+        if let timeObserver = timeObserver {
+            audioPlayer?.removeTimeObserver(timeObserver)
         }
     }
 }
