@@ -4,10 +4,9 @@ import SwiftUI
 struct MonumentView: View {
     @Binding var isLoggedIn: Bool
     @StateObject private var locationManager = LocationManager()
-    @StateObject private var landmarkManager = LandmarkManager(client: supabase)
     @State private var selectedLandmark: LandmarkItem?
-    @State private var isLoggingOut = false  // Add loading state
-    @State private var logoutError: String?  // Add error handling
+    @State private var isLoggingOut = false
+    @State private var logoutError: String?
 
     var body: some View {
         NavigationView {
@@ -171,14 +170,11 @@ struct MonumentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // Update the landmarkListView in MonumentView
     private var landmarkListView: some View {
         VStack(spacing: 24) {
             if let primaryLandmark = locationManager.nearbyLandmarks.first {
-                // Fetch and display landmark data
                 PrimaryLandmarkViewContainer(
                     mapItem: primaryLandmark,
-                    landmarkManager: landmarkManager,
                     onPlayTapped: {
                         print(
                             "Play tapped for \(primaryLandmark.mapItem.name ?? "Unknown")"
@@ -214,40 +210,7 @@ struct MonumentView: View {
         }
         .padding(.top)
     }
-}
 
-// New container view to handle landmark fetching
-struct PrimaryLandmarkViewContainer: View {
-    let mapItem: LandmarkItem
-    let landmarkManager: LandmarkManager
-    let onPlayTapped: () -> Void
-    let onTap: () -> Void
-
-    @State private var landmark: DatabaseLandmark?
-    @State private var isLoading = false
-
-    var body: some View {
-        PrimaryLandmarkView(
-            landmark: mapItem,
-            databaseLandmark: landmark,
-            onPlayTapped: onPlayTapped,
-            onTap: onTap
-        )
-        .task {
-            // Fetch landmark data if we have a mapbox ID
-            if let mapboxId = mapItem.mapItem.name {  // Adjust this based on where you store the mapbox ID
-                isLoading = true
-                do {
-                    landmark = try await landmarkManager.getPlace(
-                        mapboxId: "poi.850403546914")
-                    //landmark = try await landmarkManager.getPlace(mapboxId: mapboxId)
-                } catch {
-                    print("Error fetching landmark: \(error)")
-                }
-                isLoading = false
-            }
-        }
-    }
 }
 
 struct SecondaryLandmarkView: View {

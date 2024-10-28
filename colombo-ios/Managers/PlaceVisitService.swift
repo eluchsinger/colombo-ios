@@ -107,6 +107,26 @@ class PlaceVisitService {
             language: language
         )
 
+        // Log the request payload
+        if let jsonData = try? JSONEncoder().encode(request),
+            let jsonString = String(data: jsonData, encoding: .utf8)
+        {
+            print("📤 Request payload:")
+            print(jsonString)
+
+            // Pretty print for better readability
+            if let jsonObject = try? JSONSerialization.jsonObject(
+                with: jsonData),
+                let prettyJsonData = try? JSONSerialization.data(
+                    withJSONObject: jsonObject, options: .prettyPrinted),
+                let prettyJsonString = String(
+                    data: prettyJsonData, encoding: .utf8)
+            {
+                print("\nPretty printed:")
+                print(prettyJsonString)
+            }
+        }
+
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue(
@@ -115,13 +135,25 @@ class PlaceVisitService {
         urlRequest.setValue(
             "application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.httpBody = try? JSONEncoder().encode(request)
-
-        // Increase request timeout to 30 seconds
-        urlRequest.timeoutInterval = 60
+        urlRequest.timeoutInterval = 30
 
         do {
             let (data, response) = try await URLSession.shared.data(
                 for: urlRequest)
+
+            // Log the response
+            print(
+                "\n📥 Response status: \((response as? HTTPURLResponse)?.statusCode ?? -1)"
+            )
+            if let jsonObject = try? JSONSerialization.jsonObject(with: data),
+                let prettyJsonData = try? JSONSerialization.data(
+                    withJSONObject: jsonObject, options: .prettyPrinted),
+                let prettyJsonString = String(
+                    data: prettyJsonData, encoding: .utf8)
+            {
+                print("Response body:")
+                print(prettyJsonString)
+            }
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw PlaceVisitError.invalidResponse

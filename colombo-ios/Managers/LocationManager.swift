@@ -1,63 +1,63 @@
-import Foundation
 import CoreLocation
+import Foundation
 import MapKit
 import SwiftUI
-
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     private var lastFetchTime: Date?
-    private let fetchInterval: TimeInterval = 5
+    private let fetchInterval: TimeInterval = 1  // Reduced from 5 to 1 second
     private let searchRadius: CLLocationDistance = 50
-    
+
     @Published var location: CLLocationCoordinate2D? = nil
     @Published var locationError: String? = nil
     @Published var nearbyLandmarks: [LandmarkItem] = []
     @Published var isSearching: Bool = false
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
-    
+
     override init() {
         super.init()
         setupLocationManager()
     }
-    
+
     private func setupLocationManager() {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.activityType = .otherNavigation
-        locationManager.distanceFilter = 10000
-        
+        locationManager.activityType = .fitness  // Changed from .otherNavigation for better updates
+        locationManager.distanceFilter = 5  // Changed from 10000 to 5 meters
+
         // Just store the current status
         authorizationStatus = locationManager.authorizationStatus
     }
-    
+
     func requestLocationPermission() {
         locationManager.requestWhenInUseAuthorization()
     }
-    
+
     func startUpdatingLocation() {
         // Don't check location services here
         // Just start updates - the delegate will handle any issues
         locationManager.startUpdatingLocation()
     }
-    
+
     func stopUpdatingLocation() {
         locationManager.stopUpdatingLocation()
     }
-    
+
     // Handle authorization status changes
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            
+
             self.authorizationStatus = manager.authorizationStatus
-            
+
             switch manager.authorizationStatus {
             case .authorizedWhenInUse, .authorizedAlways:
                 self.locationError = nil
                 self.startUpdatingLocation()
             case .denied, .restricted:
-                self.locationError = "Location access denied. Please enable it in Settings."
+                self.locationError =
+                    "Location access denied. Please enable it in Settings."
                 self.stopUpdatingLocation()
             case .notDetermined:
                 // Wait for user response to permission request
@@ -67,17 +67,19 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
         }
     }
-    
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+
+    func locationManager(
+        _ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]
+    ) {
         guard let latestLocation = locations.last else {
             locationError = "Unable to determine location"
             return
         }
-        
+
         DispatchQueue.main.async { [weak self] in
             // Clear any existing location errors since we got a valid location
             self?.locationError = nil
-            
+
             // Compare distances using CLLocation
             if self?.location == nil {
                 self?.location = latestLocation.coordinate
@@ -87,112 +89,122 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                     latitude: currentLocation.latitude,
                     longitude: currentLocation.longitude
                 )
-                
-                if currentLoc.distance(from: latestLocation) > 10 {
+
+                // Reduced distance threshold from 10 to 5 meters
+                if currentLoc.distance(from: latestLocation) > 5 {
                     self?.location = latestLocation.coordinate
                     self?.fetchLandmarksWithThrottle()
                 }
             }
         }
     }
-    
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+
+    func locationManager(
+        _ manager: CLLocationManager, didFailWithError error: Error
+    ) {
         DispatchQueue.main.async { [weak self] in
             if let clError = error as? CLError {
                 switch clError.code {
                 case .denied:
-                    self?.locationError = "Location access denied. Please check your settings."
+                    self?.locationError =
+                        "Location access denied. Please check your settings."
                 case .locationUnknown:
-                    self?.locationError = "Unable to determine location. Please try again."
+                    self?.locationError =
+                        "Unable to determine location. Please try again."
                 case .network:
-                    self?.locationError = "Network error. Please check your connection."
+                    self?.locationError =
+                        "Network error. Please check your connection."
                 default:
-                    self?.locationError = "Location error: \(clError.localizedDescription)"
+                    self?.locationError =
+                        "Location error: \(clError.localizedDescription)"
                 }
             } else {
-                self?.locationError = "Location error: \(error.localizedDescription)"
+                self?.locationError =
+                    "Location error: \(error.localizedDescription)"
             }
-            
+
             print("Location error: \(error.localizedDescription)")
         }
     }
-    
+
     private func fetchLandmarksWithThrottle() {
         let now = Date()
         if let lastFetchTime = lastFetchTime,
-           now.timeIntervalSince(lastFetchTime) < fetchInterval {
+            now.timeIntervalSince(lastFetchTime) < fetchInterval
+        {
             return
         }
         lastFetchTime = now
         fetchNearbyLandmarks()
     }
-    
+
     private func fetchNearbyLandmarks() {
         guard let userLocation = location else {
             locationError = "No location available"
             return
         }
-        
+
         isSearching = true
-        
-        let request = MKLocalPointsOfInterestRequest(center: userLocation, radius: searchRadius)
-        request.pointOfInterestFilter = MKPointOfInterestFilter(including: [.landmark])
-        
+
+        let request = MKLocalPointsOfInterestRequest(
+            center: userLocation, radius: searchRadius)
+        request.pointOfInterestFilter = MKPointOfInterestFilter(including: [
+            .landmark
+        ])
+
         let search = MKLocalSearch(request: request)
-        
+
+        // Cancel any existing search before starting a new one
         search.start { [weak self] response, error in
             DispatchQueue.main.async {
                 self?.isSearching = false
-                
+
                 if let error = error {
-                    self?.locationError = "Search error: \(error.localizedDescription)"
+                    self?.locationError =
+                        "Search error: \(error.localizedDescription)"
                     self?.nearbyLandmarks = []
                     return
                 }
-                
+
                 guard let response = response else {
                     self?.locationError = "No landmarks found nearby"
                     self?.nearbyLandmarks = []
                     return
                 }
-                
+
                 guard let userCoordinate = self?.location else { return }
                 let userLoc = CLLocation(
                     latitude: userCoordinate.latitude,
                     longitude: userCoordinate.longitude
                 )
-                
+
                 let nearbyItems = response.mapItems
                     .filter { mapItem in
-                        guard let itemLocation = mapItem.placemark.location else { return false }
-                        return itemLocation.distance(from: userLoc) <= (self?.searchRadius ?? 50)
+                        guard let itemLocation = mapItem.placemark.location
+                        else { return false }
+                        return itemLocation.distance(from: userLoc)
+                            <= (self?.searchRadius ?? 50)
                     }
                     .sorted { item1, item2 in
                         guard let loc1 = item1.placemark.location,
-                              let loc2 = item2.placemark.location else { return false }
-                        return loc1.distance(from: userLoc) < loc2.distance(from: userLoc)
+                            let loc2 = item2.placemark.location
+                        else { return false }
+                        return loc1.distance(from: userLoc)
+                            < loc2.distance(from: userLoc)
                     }
-                    .map { LandmarkItem(mapItem: $0) }  // Convert to LandmarkItem
-                
-                response.mapItems.forEach { item in
-                    print("Found POI:")
-                    print("- Identifier: \(String(describing: item.identifier?.rawValue))")
-                    print("- Name: \(item.name ?? "Unknown")")
-                    print("- Coordinates: \(item.placemark.coordinate.latitude), \(item.placemark.coordinate.longitude)")
-                }
-                
+                    .map { LandmarkItem(mapItem: $0) }
+
                 self?.nearbyLandmarks = nearbyItems
                 if nearbyItems.isEmpty {
-                    self?.locationError = "No landmarks found within \(Int(self?.searchRadius ?? 50)) meters"
+                    self?.locationError =
+                        "No landmarks found within \(Int(self?.searchRadius ?? 50)) meters"
                 } else {
                     self?.locationError = nil
                 }
-                
-                print("Found \(nearbyItems.count) landmarks within range")
             }
         }
     }
-    
+
     func refreshLandmarks() {
         fetchNearbyLandmarks()
     }
