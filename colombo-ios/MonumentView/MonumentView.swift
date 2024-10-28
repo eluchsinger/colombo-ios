@@ -1,21 +1,21 @@
-import SwiftUI
 import MapKit
+import SwiftUI
 
 struct MonumentView: View {
     @Binding var isLoggedIn: Bool
     @StateObject private var locationManager = LocationManager()
     @StateObject private var landmarkManager = LandmarkManager(client: supabase)
     @State private var selectedLandmark: LandmarkItem?
-    @State private var isLoggingOut = false // Add loading state
-    @State private var logoutError: String? // Add error handling
-    
+    @State private var isLoggingOut = false  // Add loading state
+    @State private var logoutError: String?  // Add error handling
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
                 locationStatusView
-                
+
                 Divider()
-                
+
                 if locationManager.authorizationStatus == .notDetermined {
                     requestLocationView
                 } else if locationManager.isSearching {
@@ -36,8 +36,9 @@ struct MonumentView: View {
                 ModernLandmarkDetailView(landmark: landmark)
             }
             .onAppear {
-                if locationManager.authorizationStatus == .authorizedWhenInUse ||
-                    locationManager.authorizationStatus == .authorizedAlways {
+                if locationManager.authorizationStatus == .authorizedWhenInUse
+                    || locationManager.authorizationStatus == .authorizedAlways
+                {
                     locationManager.startUpdatingLocation()
                 }
             }
@@ -46,8 +47,7 @@ struct MonumentView: View {
             }
         }
     }
-    
-    
+
     private var logoutButton: some View {
         Button(action: {
             performLogout()
@@ -61,10 +61,13 @@ struct MonumentView: View {
             }
         }
         .disabled(isLoggingOut)
-        .alert("Logout Error", isPresented: .init(
-            get: { logoutError != nil },
-            set: { _ in logoutError = nil }
-        )) {
+        .alert(
+            "Logout Error",
+            isPresented: .init(
+                get: { logoutError != nil },
+                set: { _ in logoutError = nil }
+            )
+        ) {
             Button("OK", role: .cancel) {}
         } message: {
             if let error = logoutError {
@@ -72,14 +75,14 @@ struct MonumentView: View {
             }
         }
     }
-    
+
     private func performLogout() {
         isLoggingOut = true
-        
+
         Task {
             do {
                 try await supabase.auth.signOut()
-                
+
                 await MainActor.run {
                     isLoggingOut = false
                     isLoggedIn = false
@@ -92,7 +95,7 @@ struct MonumentView: View {
             }
         }
     }
-    
+
     private var requestLocationView: some View {
         VStack(spacing: 16) {
             Image(systemName: "location.circle")
@@ -100,10 +103,12 @@ struct MonumentView: View {
                 .foregroundColor(.blue)
             Text("Location Access Required")
                 .font(.headline)
-            Text("Please allow access to your location to find nearby landmarks")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
+            Text(
+                "Please allow access to your location to find nearby landmarks"
+            )
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
             Button("Allow Location Access") {
                 locationManager.requestLocationPermission()
             }
@@ -112,17 +117,18 @@ struct MonumentView: View {
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     private var refreshButton: some View {
         Button(action: {
             locationManager.refreshLandmarks()
         }) {
             Image(systemName: "arrow.clockwise")
         }
-        .disabled(locationManager.isSearching ||
-                  locationManager.authorizationStatus != .authorizedWhenInUse)
+        .disabled(
+            locationManager.isSearching
+                || locationManager.authorizationStatus != .authorizedWhenInUse)
     }
-    
+
     private var locationStatusView: some View {
         Group {
             if let location = locationManager.location {
@@ -130,9 +136,11 @@ struct MonumentView: View {
                     Text("Searching within 10 meters of your location")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                    Text("(\(location.latitude.formatted(.number.precision(.fractionLength(4)))), \(location.longitude.formatted(.number.precision(.fractionLength(4)))))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text(
+                        "(\(location.latitude.formatted(.number.precision(.fractionLength(4)))), \(location.longitude.formatted(.number.precision(.fractionLength(4)))))"
+                    )
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 }
             } else if let error = locationManager.locationError {
                 Label(error, systemImage: "exclamationmark.triangle")
@@ -146,7 +154,7 @@ struct MonumentView: View {
         .frame(maxWidth: .infinity)
         .background(Color(.systemBackground))
     }
-    
+
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             Image(systemName: "building.columns")
@@ -162,7 +170,7 @@ struct MonumentView: View {
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     // Update the landmarkListView in MonumentView
     private var landmarkListView: some View {
         VStack(spacing: 24) {
@@ -172,22 +180,26 @@ struct MonumentView: View {
                     mapItem: primaryLandmark,
                     landmarkManager: landmarkManager,
                     onPlayTapped: {
-                        print("Play tapped for \(primaryLandmark.mapItem.name ?? "Unknown")")
+                        print(
+                            "Play tapped for \(primaryLandmark.mapItem.name ?? "Unknown")"
+                        )
                     },
                     onTap: {
                         selectedLandmark = primaryLandmark
                     }
                 )
                 .padding(.horizontal)
-                
+
                 if locationManager.nearbyLandmarks.count > 1,
-                   let secondaryLandmark = locationManager.nearbyLandmarks[safe: 1] {
+                    let secondaryLandmark = locationManager.nearbyLandmarks[
+                        safe: 1]
+                {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Next closest")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .padding(.horizontal)
-                        
+
                         SecondaryLandmarkView(
                             landmark: secondaryLandmark,
                             onTap: {
@@ -197,13 +209,12 @@ struct MonumentView: View {
                     }
                 }
             }
-            
+
             Spacer()
         }
         .padding(.top)
     }
 }
-
 
 // New container view to handle landmark fetching
 struct PrimaryLandmarkViewContainer: View {
@@ -211,10 +222,10 @@ struct PrimaryLandmarkViewContainer: View {
     let landmarkManager: LandmarkManager
     let onPlayTapped: () -> Void
     let onTap: () -> Void
-    
+
     @State private var landmark: DatabaseLandmark?
     @State private var isLoading = false
-    
+
     var body: some View {
         PrimaryLandmarkView(
             landmark: mapItem,
@@ -227,7 +238,8 @@ struct PrimaryLandmarkViewContainer: View {
             if let mapboxId = mapItem.mapItem.name {  // Adjust this based on where you store the mapbox ID
                 isLoading = true
                 do {
-                    landmark = try await landmarkManager.getPlace(mapboxId: "poi.850403546914")
+                    landmark = try await landmarkManager.getPlace(
+                        mapboxId: "poi.850403546914")
                     //landmark = try await landmarkManager.getPlace(mapboxId: mapboxId)
                 } catch {
                     print("Error fetching landmark: \(error)")
@@ -238,103 +250,33 @@ struct PrimaryLandmarkViewContainer: View {
     }
 }
 
-
-struct PrimaryLandmarkView: View {
-    let landmark: LandmarkItem
-    let databaseLandmark: DatabaseLandmark?
-    @StateObject private var audioPlayer = AudioPlayer()
-    let onPlayTapped: () -> Void
-    let onTap: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(landmark.mapItem.name ?? "Unknown Landmark")
-                        .font(.title2)
-                        .bold()
-                    
-                    if let subtitle = formatAddress(from: landmark.mapItem.placemark) {
-                        Text(subtitle)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    // Display additional info from database if available
-                    if let dbLandmark = databaseLandmark {
-                        Text("ID: \(dbLandmark.id)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                
-                Spacer()
-                
-                Button(action: {
-                    if audioPlayer.isPlaying {
-                        audioPlayer.stop()
-                    } else {
-                        audioPlayer.play()
-                    }
-                }) {
-                    Image(systemName: audioPlayer.isPlaying ? "stop.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 44))
-                        .foregroundColor(.blue)
-                }
-                .buttonStyle(.plain)
-            }
-            
-            if let distance = landmark.mapItem.placemark.location?.distance(from: CLLocation(
-                latitude: landmark.mapItem.placemark.coordinate.latitude,
-                longitude: landmark.mapItem.placemark.coordinate.longitude
-            )) {
-                Text(String(format: "%.0f meters away", distance))
-                    .font(.headline)
-                    .foregroundColor(.blue)
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(16)
-        .shadow(radius: 2)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onTap)
-    }
-    
-    private func formatAddress(from placemark: MKPlacemark) -> String? {
-        let components = [
-            placemark.thoroughfare,
-            placemark.locality,
-            placemark.administrativeArea,
-            placemark.postalCode
-        ].compactMap { $0 }
-        
-        return components.isEmpty ? nil : components.joined(separator: ", ")
-    }
-}
-
 struct SecondaryLandmarkView: View {
     let landmark: LandmarkItem
     let onTap: () -> Void
-    
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(landmark.mapItem.name ?? "Unknown Landmark")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
-                
-                if let distance = landmark.mapItem.placemark.location?.distance(from: CLLocation(
-                    latitude: landmark.mapItem.placemark.coordinate.latitude,
-                    longitude: landmark.mapItem.placemark.coordinate.longitude
-                )) {
+
+                if let distance = landmark.mapItem.placemark.location?.distance(
+                    from: CLLocation(
+                        latitude: landmark.mapItem.placemark.coordinate
+                            .latitude,
+                        longitude: landmark.mapItem.placemark.coordinate
+                            .longitude
+                    ))
+                {
                     Text(String(format: "%.0f meters away", distance))
                         .font(.caption)
                         .foregroundColor(.blue)
                 }
             }
-            
+
             Spacer()
-            
+
             Image(systemName: "chevron.right")
                 .foregroundColor(.secondary)
         }
@@ -345,21 +287,23 @@ struct SecondaryLandmarkView: View {
     }
 }
 
-
 @available(iOS 17.0, *)
 struct ModernLandmarkDetailView: View {
     let landmark: LandmarkItem
     @Environment(\.dismiss) private var dismiss
     @State private var cameraPosition: MapCameraPosition
-    
+
     init(landmark: LandmarkItem) {
         self.landmark = landmark
-        self._cameraPosition = State(initialValue: .region(MKCoordinateRegion(
-            center: landmark.mapItem.placemark.coordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
-        )))
+        self._cameraPosition = State(
+            initialValue: .region(
+                MKCoordinateRegion(
+                    center: landmark.mapItem.placemark.coordinate,
+                    span: MKCoordinateSpan(
+                        latitudeDelta: 0.001, longitudeDelta: 0.001)
+                )))
     }
-    
+
     var body: some View {
         NavigationView {
             ScrollView {
@@ -385,23 +329,25 @@ struct ModernLandmarkDetailView: View {
                     .frame(height: 200)
                     .cornerRadius(12)
                     .padding(.horizontal)
-                    
+
                     VStack(alignment: .leading, spacing: 12) {
                         // Name and basic info
                         Text(landmark.mapItem.name ?? "Unknown Landmark")
                             .font(.title2)
                             .bold()
-                        
-                        if let address = formatDetailedAddress(from: landmark.mapItem.placemark) {
+
+                        if let address = formatDetailedAddress(
+                            from: landmark.mapItem.placemark)
+                        {
                             Label(address, systemImage: "location.fill")
                                 .font(.subheadline)
                         }
-                        
+
                         if let phoneNumber = landmark.mapItem.phoneNumber {
                             Label(phoneNumber, systemImage: "phone.fill")
                                 .font(.subheadline)
                         }
-                        
+
                         if let url = landmark.mapItem.url {
                             Link(destination: url) {
                                 Label("Visit Website", systemImage: "globe")
@@ -410,7 +356,7 @@ struct ModernLandmarkDetailView: View {
                         }
                     }
                     .padding(.horizontal)
-                    
+
                     // Actions
                     VStack(spacing: 12) {
                         Button(action: {
@@ -420,11 +366,14 @@ struct ModernLandmarkDetailView: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
-                        
+
                         if let url = landmark.mapItem.url {
                             ShareLink(item: url) {
-                                Label("Share Location", systemImage: "square.and.arrow.up")
-                                    .frame(maxWidth: .infinity)
+                                Label(
+                                    "Share Location",
+                                    systemImage: "square.and.arrow.up"
+                                )
+                                .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.bordered)
                         }
@@ -436,27 +385,26 @@ struct ModernLandmarkDetailView: View {
             .navigationBarItems(trailing: Button("Done") { dismiss() })
         }
     }
-    
+
     private func formatDetailedAddress(from placemark: MKPlacemark) -> String? {
-        
+
         let components = [
             placemark.subThoroughfare,
             placemark.thoroughfare,
             placemark.locality,
             placemark.administrativeArea,
             placemark.postalCode,
-            placemark.country
+            placemark.country,
         ].compactMap { $0 }
-        
+
         return components.isEmpty ? nil : components.joined(separator: ", ")
     }
-    
+
     private func openInMaps() {
         let mapItem = MKMapItem(placemark: landmark.mapItem.placemark)
         mapItem.openInMaps()
     }
 }
-
 
 // Helper extension for safe array access
 extension Array {
@@ -468,4 +416,3 @@ extension Array {
 #Preview {
     MonumentView(isLoggedIn: .constant(true))
 }
-
