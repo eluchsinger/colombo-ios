@@ -9,21 +9,23 @@ import MapKit
 import SwiftUI
 
 struct PrimaryLandmarkViewContainer: View {
-    let mapItem: LandmarkItem
+    let landmark: LandmarkItem
+    @Binding var visitResponse: PlaceVisitResponse?
     let onPlayTapped: () -> Void
     let onTap: () -> Void
 
     var body: some View {
         PrimaryLandmarkView(
-            landmark: mapItem,
+            landmark: landmark,
+            visitResponse: $visitResponse,
             onPlayTapped: onPlayTapped,
             onTap: onTap
         )
     }
 }
-
 struct PrimaryLandmarkView: View {
     let landmark: LandmarkItem
+    @Binding var visitResponse: PlaceVisitResponse?
     @StateObject private var audioPlayer = AudioPlayer()
     let onPlayTapped: () -> Void
     let onTap: () -> Void
@@ -31,7 +33,6 @@ struct PrimaryLandmarkView: View {
     @State private var isLoading = false
     @State private var loadingState: LoadingState = .idle
     @State private var errorMessage: String?
-    @State private var visitResponse: PlaceVisitResponse?
 
     enum LoadingState {
         case idle
@@ -55,7 +56,6 @@ struct PrimaryLandmarkView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            // Existing header content
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(landmark.mapItem.name ?? "Unknown Landmark")
@@ -112,7 +112,6 @@ struct PrimaryLandmarkView: View {
                 .disabled(isLoading)
             }
 
-            // Distance indicator
             if let distance = landmark.mapItem.placemark.location?.distance(
                 from: CLLocation(
                     latitude: landmark.mapItem.placemark.coordinate.latitude,
@@ -128,23 +127,6 @@ struct PrimaryLandmarkView: View {
             if loadingState == .playing || audioPlayer.duration > 0 {
                 AudioControlsView(audioPlayer: audioPlayer)
                     .padding(.top, 8)
-            }
-
-            // Story content
-            if let visitResponse, !isLoading {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(visitResponse.placeName)
-                        .font(.headline)
-                    if let subtitle = visitResponse.subtitle {
-                        Text(subtitle)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    Text(visitResponse.storyText)
-                        .font(.body)
-                        .lineLimit(3)
-                }
-                .transition(.opacity)
             }
         }
         .padding()
@@ -164,33 +146,38 @@ struct PrimaryLandmarkView: View {
     }
 
     private func playAudio() async {
-        isLoading = true
-        errorMessage = nil
-        loadingState = .generatingStory
-
-        do {
-            let response = try await PlaceVisitService.shared.visitPlace(
-                landmark: landmark,
-                language: Locale.current.language.languageCode?.identifier
-            )
-            visitResponse = response
-
-            loadingState = .preparingAudio
-
-            try await audioPlayer.play(from: response.audioUri)
-
-            loadingState = .playing
-            isLoading = false
-        } catch {
-            if let placeError = error as? PlaceVisitError {
-                errorMessage = placeError.localizedDescription
-            } else {
-                errorMessage = error.localizedDescription
+            isLoading = true
+            errorMessage = nil
+            loadingState = .generatingStory
+            
+            do {
+                let response = try await PlaceVisitService.shared.visitPlace(
+                    landmark: landmark,
+                    language: Locale.current.language.languageCode?.identifier
+                )
+                print("Got visit response: \(response)") // Add this
+                visitResponse = response
+                print("Set visit response: \(visitResponse != nil)") // Add this
+                
+                
+                loadingState = .preparingAudio
+                
+                try await audioPlayer.play(from: response.audioUri)
+                
+                loadingState = .playing
+                isLoading = false
+            } catch {
+                if let audioError = error as? AudioPlayerError {
+                    errorMessage = audioError.localizedDescription
+                } else if let placeError = error as? PlaceVisitError {
+                    errorMessage = placeError.localizedDescription
+                } else {
+                    errorMessage = error.localizedDescription
+                }
+                loadingState = .idle
+                isLoading = false
             }
-            loadingState = .idle
-            isLoading = false
         }
-    }
 
     private func formatAddress(from placemark: MKPlacemark) -> String? {
         let components = [
