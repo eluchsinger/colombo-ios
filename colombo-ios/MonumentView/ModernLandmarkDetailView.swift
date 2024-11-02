@@ -32,49 +32,60 @@ struct ModernLandmarkDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 24) {
                 if isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical)
+                        .padding(.vertical, 32)
                 } else if let error = error {
-                    Text(error)
-                        .foregroundColor(.red)
-                        .padding()
+                    VStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.largeTitle)
+                            .foregroundColor(.red)
+                        Text(error)
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(24)
                 } else if let response = visitResponse {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("About this Place")
-                            .font(.title2)
-                            .bold()
-                            .padding(.horizontal)
-
+                    Group {
+                        // Title Section
                         VStack(alignment: .leading, spacing: 8) {
+                            Text("About this Place")
+                                .font(.title)
+                                .bold()
                             if let subtitle = response.subtitle {
                                 Text(subtitle)
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
-                                    .padding(.horizontal)
                             }
-                            
-                            // Add AudioControlsView before the story text
-                            AudioControlsView(audioPlayer: audioPlayer)
-                                .padding(.horizontal)
-                            
-                            Text(response.storyText)
-                                .font(.body)
-                                .lineSpacing(4)
-                                .padding(.horizontal)
                         }
+                        .padding(.horizontal)
+                        
+                        // Audio Controls
+                        AudioControlsView(audioPlayer: audioPlayer)
+                            .padding()
+                            .background(Color(.secondarySystemBackground))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                        
+                        // Story Text
+                        Text(response.storyText)
+                            .font(.body)
+                            .lineSpacing(6)
+                            .padding(.horizontal)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    Text("No data available")
-                        .foregroundColor(.gray)
-                        .padding()
+                    ContentUnavailableView(
+                        "No Data Available",
+                        systemImage: "doc.text.fill",
+                        description: Text("The content for this location could not be loaded.")
+                    )
+                    .padding()
                 }
             }
             .padding(.vertical)
-            .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationBarTitleDisplayMode(.inline)

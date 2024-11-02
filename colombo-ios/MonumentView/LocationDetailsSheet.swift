@@ -20,7 +20,7 @@ struct LocationDetailsSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 24) {
                     // Map
                     Map(position: $cameraPosition) {
                         Annotation(
@@ -39,21 +39,15 @@ struct LocationDetailsSheet: View {
                         MapCompass()
                         MapScaleView()
                     }
-                    .frame(height: 200)
-                    .cornerRadius(12)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 250)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal)
 
                     // Location info
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Location Details")
-                            .font(.title2)
-                            .bold()
-                            .padding(.horizontal)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            if let address = formatDetailedAddress(
-                                from: landmark.mapItem.placemark)
-                            {
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 16) {
+                            if let address = formatDetailedAddress(from: landmark.mapItem.placemark) {
                                 Label(address, systemImage: "location.fill")
                                     .font(.subheadline)
                             }
@@ -70,32 +64,37 @@ struct LocationDetailsSheet: View {
                                 }
                             }
                         }
-                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                    } label: {
+                        Text("Location Details")
+                            .font(.headline)
                     }
+                    .padding(.horizontal)
 
                     // Actions
                     VStack(spacing: 12) {
-                        Button(action: {
-                            openInMaps()
-                        }) {
+                        Button(action: openInMaps) {
                             Label("Open in Maps", systemImage: "map.fill")
                                 .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.accentColor)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
                         }
-                        .buttonStyle(.bordered)
 
                         if let url = landmark.mapItem.url {
                             ShareLink(item: url) {
-                                Label(
-                                    "Share Location",
-                                    systemImage: "square.and.arrow.up"
-                                )
-                                .frame(maxWidth: .infinity)
+                                Label("Share Location", systemImage: "square.and.arrow.up")
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color(.secondarySystemBackground))
+                                    .cornerRadius(12)
                             }
-                            .buttonStyle(.bordered)
                         }
                     }
-                    .padding()
+                    .padding(.horizontal)
                 }
+                .padding(.vertical)
             }
             .navigationTitle("Location Information")
             .navigationBarTitleDisplayMode(.inline)
