@@ -131,30 +131,34 @@ struct MonumentView: View {
     }
 
     private var landmarkListView: some View {
-        VStack(spacing: 16) {
-            if let closest = closestLandmark {
-                NavigationLink(destination: ModernLandmarkDetailView(landmark: closest)) {
-                    PrimaryLandmarkView(
-                        landmark: closest,
-                        userLocation: locationManager.location.map { CLLocation(latitude: $0.latitude, longitude: $0.longitude) }
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-                .padding(.horizontal)
-            }
-
-            if !remainingLandmarks.isEmpty {
-                List(remainingLandmarks) { landmark in
-                    NavigationLink(destination: ModernLandmarkDetailView(
-                        landmark: landmark
-                    )) {
-                        LandmarkRowView(
-                            landmark: landmark,
+        ScrollView {
+            VStack(spacing: 16) {
+                if let closest = closestLandmark {
+                    NavigationLink(destination: ModernLandmarkDetailView(landmark: closest)) {
+                        PrimaryLandmarkView(
+                            landmark: closest,
                             userLocation: locationManager.location.map { CLLocation(latitude: $0.latitude, longitude: $0.longitude) }
                         )
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal)
+                }
+
+                if !remainingLandmarks.isEmpty {
+                    ForEach(remainingLandmarks) { landmark in
+                        NavigationLink(destination: ModernLandmarkDetailView(
+                            landmark: landmark
+                        )) {
+                            LandmarkRowView(
+                                landmark: landmark,
+                                userLocation: locationManager.location.map { CLLocation(latitude: $0.latitude, longitude: $0.longitude) }
+                            )
+                        }
+                    }
+                    .padding(.horizontal)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .top)
         }
     }
 }
