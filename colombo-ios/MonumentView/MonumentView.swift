@@ -5,11 +5,6 @@ struct MonumentView: View {
     @Binding var isLoggedIn: Bool
     @StateObject private var locationManager = LocationManager()
     @State private var selectedLandmark: LandmarkItem?
-    @State private var visitResponse: PlaceVisitResponse? {
-        didSet {
-            print("Visit response changed: \(visitResponse != nil)")
-        }
-    }
 
     var body: some View {
         NavigationView {
@@ -36,12 +31,6 @@ struct MonumentView: View {
                     Image(systemName: "gear")
                 }
             )
-            .sheet(item: $selectedLandmark) { landmark in
-                ModernLandmarkDetailView(
-                    landmark: landmark,
-                    visitResponse: $visitResponse
-                )
-            }
             .onAppear {
                 if locationManager.authorizationStatus == .authorizedWhenInUse
                     || locationManager.authorizationStatus == .authorizedAlways
@@ -62,12 +51,10 @@ struct MonumentView: View {
                 .foregroundColor(.blue)
             Text("Location Access Required")
                 .font(.headline)
-            Text(
-                "Please allow access to your location to find nearby landmarks"
-            )
-            .font(.subheadline)
-            .foregroundColor(.secondary)
-            .multilineTextAlignment(.center)
+            Text("Please allow access to your location to find nearby landmarks")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
             Button("Allow Location Access") {
                 locationManager.requestLocationPermission()
             }
@@ -79,11 +66,6 @@ struct MonumentView: View {
 
     private var refreshButton: some View {
         Button(action: {
-            // Stop any playing audio before refreshing
-            if let currentLandmark = locationManager.nearbyLandmarks.first {
-                // This will trigger the onDisappear in PrimaryLandmarkView
-                locationManager.nearbyLandmarks = []
-            }
             locationManager.refreshLandmarks()
         }) {
             Image(systemName: "arrow.clockwise")
@@ -136,70 +118,34 @@ struct MonumentView: View {
     }
 
     private var landmarkListView: some View {
-        VStack(spacing: 24) {
-            if let primaryLandmark = locationManager.nearbyLandmarks.first {
-                PrimaryLandmarkViewContainer(
-                    landmark: primaryLandmark,
-                    visitResponse: $visitResponse,
-                    onPlayTapped: {
-                        print(
-                            "Play tapped for \(primaryLandmark.mapItem.name ?? "Unknown")"
-                        )
-                    },
-                    onTap: {
-                        selectedLandmark = primaryLandmark
-                    }
-                )
-                .padding(.horizontal)
-
-                if locationManager.nearbyLandmarks.count > 1,
-                    let secondaryLandmark = locationManager.nearbyLandmarks[
-                        safe: 1]
-                {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Next closest")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal)
-
-                        SecondaryLandmarkView(
-                            landmark: secondaryLandmark,
-                            onTap: {
-                                selectedLandmark = secondaryLandmark
-                            }
-                        )
-                    }
-                }
+        List(locationManager.nearbyLandmarks) { landmark in
+            NavigationLink(destination: ModernLandmarkDetailView(
+                landmark: landmark,
+                visitResponse: .constant(nil)
+            )) {
+                LandmarkRowView(landmark: landmark)
             }
-
-            Spacer()
         }
-        .padding(.top)
     }
-
 }
 
-struct SecondaryLandmarkView: View {
+struct LandmarkRowView: View {
     let landmark: LandmarkItem
-    let onTap: () -> Void
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(landmark.mapItem.name ?? "Unknown Landmark")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .font(.headline)
 
                 if let distance = landmark.mapItem.placemark.location?.distance(
                     from: CLLocation(
-                        latitude: landmark.mapItem.placemark.coordinate
-                            .latitude,
-                        longitude: landmark.mapItem.placemark.coordinate
-                            .longitude
+                        latitude: landmark.mapItem.placemark.coordinate.latitude,
+                        longitude: landmark.mapItem.placemark.coordinate.longitude
                     ))
                 {
                     Text(String(format: "%.0f meters away", distance))
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundColor(.blue)
                 }
             }
@@ -209,17 +155,7 @@ struct SecondaryLandmarkView: View {
             Image(systemName: "chevron.right")
                 .foregroundColor(.secondary)
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal)
         .contentShape(Rectangle())
-        .onTapGesture(perform: onTap)
-    }
-}
-
-// Helper extension for safe array access
-extension Array {
-    subscript(safe index: Index) -> Element? {
-        indices.contains(index) ? self[index] : nil
     }
 }
 
