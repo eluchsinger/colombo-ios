@@ -46,7 +46,7 @@ struct MonumentView: View {
                     || locationManager.authorizationStatus == .authorizedAlways
                 {
                     locationManager.startUpdatingLocation()
-                    await locationManager.refreshLandmarks()
+                    locationManager.refreshLandmarks()
                 }
             }
             .onDisappear {
@@ -78,7 +78,7 @@ struct MonumentView: View {
     private var refreshButton: some View {
         Button(action: {
             Task {
-                await locationManager.refreshLandmarks()
+                locationManager.refreshLandmarks()
             }
         }) {
             Image(systemName: "arrow.clockwise")
