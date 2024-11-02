@@ -17,6 +17,7 @@ struct ModernLandmarkDetailView: View {
     @State private var isLoading = false
     @State private var error: String?
     @State private var showingLocationDetails = false
+    @StateObject private var audioPlayer = AudioPlayer()
 
     init(landmark: LandmarkItem) {
         self.landmark = landmark
@@ -54,6 +55,11 @@ struct ModernLandmarkDetailView: View {
                                     .foregroundColor(.secondary)
                                     .padding(.horizontal)
                             }
+                            
+                            // Add AudioControlsView before the story text
+                            AudioControlsView(audioPlayer: audioPlayer)
+                                .padding(.horizontal)
+                            
                             Text(response.storyText)
                                 .font(.body)
                                 .lineSpacing(4)
@@ -86,6 +92,9 @@ struct ModernLandmarkDetailView: View {
         .task {
             await loadStory()
         }
+        .onDisappear {
+            audioPlayer.stop()
+        }
     }
 
     private func loadStory() async {
@@ -94,7 +103,9 @@ struct ModernLandmarkDetailView: View {
         
         do {
             visitResponse = try await PlaceVisitService.shared.visitPlace(landmark: landmark)
-            print("visitResponse set: \(String(describing: visitResponse))")
+            if let audioUri = visitResponse?.audioUri {
+                try await audioPlayer.play(from: audioUri)
+            }
         } catch {
             if let placeError = error as? PlaceVisitError {
                 self.error = placeError.localizedDescription

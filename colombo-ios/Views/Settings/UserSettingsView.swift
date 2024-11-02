@@ -39,13 +39,13 @@ struct UserSettingsView: View {
                 
                 Section(header: Text("Appearance")) {
                     Toggle("Use System Settings", isOn: $useSystemAppearance)
-                        .onChange(of: useSystemAppearance) { _ in
+                        .onChange(of: useSystemAppearance) { oldValue, newValue in
                             toggleAppearance()
                         }
                     
                     if !useSystemAppearance {
                         Toggle("Dark Mode", isOn: $isDarkMode)
-                            .onChange(of: isDarkMode) { _ in
+                            .onChange(of: isDarkMode) { oldValue, newValue in
                                 toggleAppearance()
                             }
                     }
