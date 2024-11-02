@@ -5,6 +5,15 @@ struct MonumentView: View {
     @Binding var isLoggedIn: Bool
     @StateObject private var locationManager = LocationManager()
     @State private var selectedLandmark: LandmarkItem?
+    @State private var visitResponse: PlaceVisitResponse?
+
+    private var closestLandmark: LandmarkItem? {
+        locationManager.nearbyLandmarks.first
+    }
+
+    private var remainingLandmarks: [LandmarkItem] {
+        Array(locationManager.nearbyLandmarks.dropFirst())
+    }
 
     var body: some View {
         NavigationView {
@@ -118,11 +127,25 @@ struct MonumentView: View {
     }
 
     private var landmarkListView: some View {
-        List(locationManager.nearbyLandmarks) { landmark in
-            NavigationLink(destination: ModernLandmarkDetailView(
-                landmark: landmark
-            )) {
-                LandmarkRowView(landmark: landmark)
+        VStack(spacing: 16) {
+            if let closest = closestLandmark {
+                PrimaryLandmarkViewContainer(
+                    landmark: closest,
+                    visitResponse: $visitResponse,
+                    onPlayTapped: { },
+                    onTap: { selectedLandmark = closest }
+                )
+                .padding(.horizontal)
+            }
+
+            if !remainingLandmarks.isEmpty {
+                List(remainingLandmarks) { landmark in
+                    NavigationLink(destination: ModernLandmarkDetailView(
+                        landmark: landmark
+                    )) {
+                        LandmarkRowView(landmark: landmark)
+                    }
+                }
             }
         }
     }
@@ -148,11 +171,6 @@ struct LandmarkRowView: View {
                         .foregroundColor(.blue)
                 }
             }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .foregroundColor(.secondary)
         }
         .contentShape(Rectangle())
     }
