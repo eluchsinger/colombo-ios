@@ -206,7 +206,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             do {
                 let articles = try await self.wikipediaManager.fetchNearbyArticles(
                     coordinate: itemLocation.coordinate,
-                    radius: Int(self.searchRadius),  // Convert Double to Int
+                    radius: 10,  // Convert Double to Int
                     limit: 1      // We only need one article per POI
                 )
                 
