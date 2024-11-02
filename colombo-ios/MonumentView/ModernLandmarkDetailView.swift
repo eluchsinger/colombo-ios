@@ -14,6 +14,9 @@ struct ModernLandmarkDetailView: View {
     @Binding var visitResponse: PlaceVisitResponse?
     @Environment(\.dismiss) private var dismiss
     @State private var cameraPosition: MapCameraPosition
+    @State private var isLoading = false
+    @State private var error: String?
+    @State private var showingLocationDetails = false
 
     init(landmark: LandmarkItem, visitResponse: Binding<PlaceVisitResponse?>) {
         self.landmark = landmark
@@ -30,29 +33,15 @@ struct ModernLandmarkDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Map
-                Map(position: $cameraPosition) {
-                    Annotation(
-                        landmark.mapItem.name ?? "Location",
-                        coordinate: landmark.mapItem.placemark.coordinate,
-                        anchor: .bottom
-                    ) {
-                        Image(systemName: "mappin.circle.fill")
-                            .font(.title)
-                            .foregroundColor(.red)
-                            .background(Color.white.clipShape(Circle()))
-                    }
-                }
-                .mapStyle(.standard(elevation: .realistic))
-                .mapControls {
-                    MapCompass()
-                    MapScaleView()
-                }
-                .frame(height: 200)
-                .cornerRadius(12)
-                .padding(.horizontal)
-
-                if let response = visitResponse {
+                if isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical)
+                } else if let error = error {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .padding()
+                } else if let response = visitResponse {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("About this Place")
                             .font(.title2)
@@ -67,69 +56,47 @@ struct ModernLandmarkDetailView: View {
                             }
                             Text(response.storyText)
                                 .font(.body)
+                                .lineSpacing(4)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .multilineTextAlignment(.leading)
                         }
                         .padding(.horizontal)
                     }
-                    Divider()
-                        .padding(.vertical)
                 }
-
-                // Location info
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Location Details")
-                        .font(.title2)
-                        .bold()
-                        .padding(.horizontal)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        if let address = formatDetailedAddress(
-                            from: landmark.mapItem.placemark)
-                        {
-                            Label(address, systemImage: "location.fill")
-                                .font(.subheadline)
-                        }
-
-                        if let phoneNumber = landmark.mapItem.phoneNumber {
-                            Label(phoneNumber, systemImage: "phone.fill")
-                                .font(.subheadline)
-                        }
-
-                        if let url = landmark.mapItem.url {
-                            Link(destination: url) {
-                                Label("Visit Website", systemImage: "globe")
-                                    .font(.subheadline)
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-
-                // Actions
-                VStack(spacing: 12) {
-                    Button(action: {
-                        openInMaps()
-                    }) {
-                        Label("Open in Maps", systemImage: "map.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-
-                    if let url = landmark.mapItem.url {
-                        ShareLink(item: url) {
-                            Label(
-                                "Share Location",
-                                systemImage: "square.and.arrow.up"
-                            )
-                            .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                }
-                .padding()
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(landmark.mapItem.name ?? "Location Details")
+        .toolbar {
+            Button {
+                showingLocationDetails = true
+            } label: {
+                Image(systemName: "info.circle")
+            }
+        }
+        .sheet(isPresented: $showingLocationDetails) {
+            LocationDetailsSheet(landmark: landmark)
+        }
+        .task {
+            await loadStory()
+        }
+    }
+
+    private func loadStory() async {
+        isLoading = true
+        error = nil
+        
+        do {
+            visitResponse = try await PlaceVisitService.shared.visitPlace(landmark: landmark)
+        } catch {
+            if let placeError = error as? PlaceVisitError {
+                self.error = placeError.localizedDescription
+            } else {
+                self.error = error.localizedDescription
+            }
+        }
+        
+        isLoading = false
     }
 
     private func formatDetailedAddress(from placemark: MKPlacemark) -> String? {
