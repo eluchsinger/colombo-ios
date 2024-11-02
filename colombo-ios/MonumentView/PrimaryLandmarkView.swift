@@ -10,6 +10,7 @@ import SwiftUI
 
 struct PrimaryLandmarkView: View {
     let landmark: LandmarkItem
+    let userLocation: CLLocation?  // Add this property
 
     var body: some View {
         VStack(spacing: 16) {
@@ -31,13 +32,9 @@ struct PrimaryLandmarkView: View {
                 Spacer()
             }
 
-            if let distance = landmark.mapItem.placemark.location?.distance(
-                from: CLLocation(
-                    latitude: landmark.mapItem.placemark.coordinate.latitude,
-                    longitude: landmark.mapItem.placemark.coordinate.longitude
-                ))
-            {
-                Text(String(format: "%.0f meters away", distance))
+            if let userLocation = userLocation,
+               let landmarkLocation = landmark.mapItem.placemark.location {
+                Text(String(format: "%.0f meters away", landmarkLocation.distance(from: userLocation)))
                     .font(.headline)
                     .foregroundColor(.blue)
             }

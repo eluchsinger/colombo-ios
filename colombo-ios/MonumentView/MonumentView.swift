@@ -134,7 +134,10 @@ struct MonumentView: View {
         VStack(spacing: 16) {
             if let closest = closestLandmark {
                 NavigationLink(destination: ModernLandmarkDetailView(landmark: closest)) {
-                    PrimaryLandmarkView(landmark: closest)
+                    PrimaryLandmarkView(
+                        landmark: closest,
+                        userLocation: locationManager.location.map { CLLocation(latitude: $0.latitude, longitude: $0.longitude) }
+                    )
                 }
                 .buttonStyle(PlainButtonStyle())
                 .padding(.horizontal)
@@ -145,7 +148,10 @@ struct MonumentView: View {
                     NavigationLink(destination: ModernLandmarkDetailView(
                         landmark: landmark
                     )) {
-                        LandmarkRowView(landmark: landmark)
+                        LandmarkRowView(
+                            landmark: landmark,
+                            userLocation: locationManager.location.map { CLLocation(latitude: $0.latitude, longitude: $0.longitude) }
+                        )
                     }
                 }
             }
@@ -155,6 +161,7 @@ struct MonumentView: View {
 
 struct LandmarkRowView: View {
     let landmark: LandmarkItem
+    let userLocation: CLLocation?
 
     var body: some View {
         HStack {
@@ -162,13 +169,9 @@ struct LandmarkRowView: View {
                 Text(landmark.mapItem.name ?? "Unknown Landmark")
                     .font(.headline)
 
-                if let distance = landmark.mapItem.placemark.location?.distance(
-                    from: CLLocation(
-                        latitude: landmark.mapItem.placemark.coordinate.latitude,
-                        longitude: landmark.mapItem.placemark.coordinate.longitude
-                    ))
-                {
-                    Text(String(format: "%.0f meters away", distance))
+                if let userLocation = userLocation,
+                   let landmarkLocation = landmark.mapItem.placemark.location {
+                    Text(String(format: "%.0f meters away", landmarkLocation.distance(from: userLocation)))
                         .font(.subheadline)
                         .foregroundColor(.blue)
                 }
