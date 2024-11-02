@@ -120,8 +120,7 @@ struct MonumentView: View {
     private var landmarkListView: some View {
         List(locationManager.nearbyLandmarks) { landmark in
             NavigationLink(destination: ModernLandmarkDetailView(
-                landmark: landmark,
-                visitResponse: .constant(nil)
+                landmark: landmark
             )) {
                 LandmarkRowView(landmark: landmark)
             }

@@ -11,16 +11,15 @@ import SwiftUI
 @available(iOS 17.0, *)
 struct ModernLandmarkDetailView: View {
     let landmark: LandmarkItem
-    @Binding var visitResponse: PlaceVisitResponse?
+    @State private var visitResponse: PlaceVisitResponse?
     @Environment(\.dismiss) private var dismiss
     @State private var cameraPosition: MapCameraPosition
     @State private var isLoading = false
     @State private var error: String?
     @State private var showingLocationDetails = false
 
-    init(landmark: LandmarkItem, visitResponse: Binding<PlaceVisitResponse?>) {
+    init(landmark: LandmarkItem) {
         self.landmark = landmark
-        self._visitResponse = visitResponse  // Use _visitResponse for binding
         self._cameraPosition = State(
             initialValue: .region(
                 MKCoordinateRegion(
@@ -53,18 +52,25 @@ struct ModernLandmarkDetailView: View {
                                 Text(subtitle)
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
+                                    .padding(.horizontal)
                             }
                             Text(response.storyText)
                                 .font(.body)
                                 .lineSpacing(4)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .multilineTextAlignment(.leading)
+                                .padding(.horizontal)
                         }
-                        .padding(.horizontal)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Text("No data available")
+                        .foregroundColor(.gray)
+                        .padding()
                 }
             }
+            .padding(.vertical)
+            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(landmark.mapItem.name ?? "Location Details")
         .toolbar {
@@ -88,6 +94,7 @@ struct ModernLandmarkDetailView: View {
         
         do {
             visitResponse = try await PlaceVisitService.shared.visitPlace(landmark: landmark)
+            print("visitResponse set: \(String(describing: visitResponse))")
         } catch {
             if let placeError = error as? PlaceVisitError {
                 self.error = placeError.localizedDescription
