@@ -5,6 +5,7 @@ import SwiftUI
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
+    private let wikipediaManager = WikipediaLocationManager()
     private var lastFetchTime: Date?
     private let fetchInterval: TimeInterval = 1  // Reduced from 5 to 1 second
     private let searchRadius: CLLocationDistance = 50
@@ -154,53 +155,88 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
         let search = MKLocalSearch(request: request)
 
-        // Cancel any existing search before starting a new one
         search.start { [weak self] response, error in
-            DispatchQueue.main.async {
-                self?.isSearching = false
+            guard let self = self else { return }
+            
+            Task {
+                await self.processSearchResults(response: response, error: error, userLocation: userLocation)
+            }
+        }
+    }
+    
+    private func processSearchResults(response: MKLocalSearch.Response?, error: Error?, userLocation: CLLocationCoordinate2D) async {
+        await MainActor.run {
+            self.isSearching = false
+            
+            if let error = error {
+                self.locationError = "Search error: \(error.localizedDescription)"
+                self.nearbyLandmarks = []
+                return
+            }
 
-                if let error = error {
-                    self?.locationError =
-                        "Search error: \(error.localizedDescription)"
-                    self?.nearbyLandmarks = []
-                    return
-                }
+            guard let response = response else {
+                self.locationError = "No landmarks found nearby"
+                self.nearbyLandmarks = []
+                return
+            }
+        }
+        
+        let userLoc = CLLocation(
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude
+        )
 
-                guard let response = response else {
-                    self?.locationError = "No landmarks found nearby"
-                    self?.nearbyLandmarks = []
-                    return
-                }
-
-                guard let userCoordinate = self?.location else { return }
-                let userLoc = CLLocation(
-                    latitude: userCoordinate.latitude,
-                    longitude: userCoordinate.longitude
+        let nearbyItems = response!.mapItems
+            .filter { mapItem in
+                guard let itemLocation = mapItem.placemark.location else { return false }
+                return itemLocation.distance(from: userLoc) <= self.searchRadius
+            }
+            .sorted { item1, item2 in
+                guard let loc1 = item1.placemark.location,
+                      let loc2 = item2.placemark.location else { return false }
+                return loc1.distance(from: userLoc) < loc2.distance(from: userLoc)
+            }
+        
+        // Filter landmarks that have Wikipedia articles
+        var landmarksWithArticles: [LandmarkItem] = []
+        
+        for mapItem in nearbyItems {
+            guard let itemLocation = mapItem.placemark.location else { continue }
+            
+            do {
+                let articles = try await self.wikipediaManager.fetchNearbyArticles(
+                    coordinate: itemLocation.coordinate,
+                    radius: 10,  // 10m radius around the POI
+                    limit: 1      // We only need one article per POI
                 )
-
-                let nearbyItems = response.mapItems
-                    .filter { mapItem in
-                        guard let itemLocation = mapItem.placemark.location
-                        else { return false }
-                        return itemLocation.distance(from: userLoc)
-                            <= (self?.searchRadius ?? 50)
+                
+                if !articles.isEmpty {
+                    print("Found Wikipedia article for \(mapItem.name ?? "unknown"):")
+                    articles.forEach { article in
+                        print("- Title: \(article.title)")
+                        print("  Distance: \(String(format: "%.2f", article.dist))m")
+                        print("  Page ID: \(article.pageid)")
+                        print("  Coordinates: (\(article.lat), \(article.lon))")
                     }
-                    .sorted { item1, item2 in
-                        guard let loc1 = item1.placemark.location,
-                            let loc2 = item2.placemark.location
-                        else { return false }
-                        return loc1.distance(from: userLoc)
-                            < loc2.distance(from: userLoc)
+                    
+                    await MainActor.run {
+                        landmarksWithArticles.append(LandmarkItem(mapItem: mapItem))
                     }
-                    .map { LandmarkItem(mapItem: $0) }
-
-                self?.nearbyLandmarks = nearbyItems
-                if nearbyItems.isEmpty {
-                    self?.locationError =
-                        "No landmarks found within \(Int(self?.searchRadius ?? 50)) meters"
                 } else {
-                    self?.locationError = nil
+                    print("No Wikipedia articles found for \(mapItem.name ?? "unknown")")
                 }
+            } catch {
+                print("Error fetching Wikipedia articles for \(mapItem.name ?? "unknown"): \(error)")
+                continue
+            }
+        }
+        
+        await MainActor.run {
+            self.nearbyLandmarks = landmarksWithArticles
+            if landmarksWithArticles.isEmpty {
+                self.locationError = "No landmarks with Wikipedia articles found within \(Int(self.searchRadius)) meters"
+            } else {
+                self.locationError = nil
             }
         }
     }
