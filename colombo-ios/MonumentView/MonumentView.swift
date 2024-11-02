@@ -5,8 +5,6 @@ struct MonumentView: View {
     @Binding var isLoggedIn: Bool
     @StateObject private var locationManager = LocationManager()
     @State private var selectedLandmark: LandmarkItem?
-    @State private var isLoggingOut = false
-    @State private var logoutError: String?
     @State private var visitResponse: PlaceVisitResponse? {
         didSet {
             print("Visit response changed: \(visitResponse != nil)")
@@ -34,7 +32,9 @@ struct MonumentView: View {
             .navigationTitle("Nearby Landmarks")
             .navigationBarItems(
                 leading: refreshButton,
-                trailing: logoutButton
+                trailing: NavigationLink(destination: UserSettingsView()) {
+                    Image(systemName: "gear")
+                }
             )
             .sheet(item: $selectedLandmark) { landmark in
                 ModernLandmarkDetailView(
@@ -51,54 +51,6 @@ struct MonumentView: View {
             }
             .onDisappear {
                 locationManager.stopUpdatingLocation()
-            }
-        }
-    }
-
-    private var logoutButton: some View {
-        Button(action: {
-            performLogout()
-        }) {
-            if isLoggingOut {
-                ProgressView()
-                    .tint(.red)
-            } else {
-                Text("Log out")
-                    .foregroundColor(.red)
-            }
-        }
-        .disabled(isLoggingOut)
-        .alert(
-            "Logout Error",
-            isPresented: .init(
-                get: { logoutError != nil },
-                set: { _ in logoutError = nil }
-            )
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            if let error = logoutError {
-                Text(error)
-            }
-        }
-    }
-
-    private func performLogout() {
-        isLoggingOut = true
-
-        Task {
-            do {
-                try await supabase.auth.signOut()
-
-                await MainActor.run {
-                    isLoggingOut = false
-                    isLoggedIn = false
-                }
-            } catch {
-                await MainActor.run {
-                    isLoggingOut = false
-                    logoutError = error.localizedDescription
-                }
             }
         }
     }
