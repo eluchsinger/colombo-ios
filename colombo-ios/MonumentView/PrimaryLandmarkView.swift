@@ -8,26 +8,8 @@
 import MapKit
 import SwiftUI
 
-struct PrimaryLandmarkViewContainer: View {
-    let landmark: LandmarkItem
-    @Binding var visitResponse: PlaceVisitResponse?
-    let onPlayTapped: () -> Void
-    let onTap: () -> Void
-
-    var body: some View {
-        PrimaryLandmarkView(
-            landmark: landmark,
-            visitResponse: $visitResponse,
-            onPlayTapped: onPlayTapped,
-            onTap: onTap
-        )
-    }
-}
 struct PrimaryLandmarkView: View {
     let landmark: LandmarkItem
-    @Binding var visitResponse: PlaceVisitResponse?
-    let onPlayTapped: () -> Void
-    let onTap: () -> Void
 
     var body: some View {
         VStack(spacing: 16) {
@@ -64,8 +46,6 @@ struct PrimaryLandmarkView: View {
         .background(Color(.secondarySystemBackground))
         .cornerRadius(16)
         .shadow(radius: 2)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onTap)
     }
 
     private func formatAddress(from placemark: MKPlacemark) -> String? {

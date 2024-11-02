@@ -5,7 +5,7 @@ struct MonumentView: View {
     @Binding var isLoggedIn: Bool
     @StateObject private var locationManager = LocationManager()
     @State private var selectedLandmark: LandmarkItem?
-    @State private var visitResponse: PlaceVisitResponse?
+    // Removed visitResponse as it's no longer needed
 
     private var closestLandmark: LandmarkItem? {
         locationManager.nearbyLandmarks.first
@@ -40,11 +40,13 @@ struct MonumentView: View {
                     Image(systemName: "gear")
                 }
             )
-            .onAppear {
+            .task {
+                // Initialize location updates when view appears
                 if locationManager.authorizationStatus == .authorizedWhenInUse
                     || locationManager.authorizationStatus == .authorizedAlways
                 {
                     locationManager.startUpdatingLocation()
+                    await locationManager.refreshLandmarks()
                 }
             }
             .onDisappear {
@@ -75,7 +77,9 @@ struct MonumentView: View {
 
     private var refreshButton: some View {
         Button(action: {
-            locationManager.refreshLandmarks()
+            Task {
+                await locationManager.refreshLandmarks()
+            }
         }) {
             Image(systemName: "arrow.clockwise")
         }
@@ -129,12 +133,10 @@ struct MonumentView: View {
     private var landmarkListView: some View {
         VStack(spacing: 16) {
             if let closest = closestLandmark {
-                PrimaryLandmarkViewContainer(
-                    landmark: closest,
-                    visitResponse: $visitResponse,
-                    onPlayTapped: { },
-                    onTap: { selectedLandmark = closest }
-                )
+                NavigationLink(destination: ModernLandmarkDetailView(landmark: closest)) {
+                    PrimaryLandmarkView(landmark: closest)
+                }
+                .buttonStyle(PlainButtonStyle())
                 .padding(.horizontal)
             }
 
