@@ -3,12 +3,29 @@ import Foundation
 import MapKit
 import SwiftUI
 
+private actor LandmarkCollector {
+    var landmarks: [LandmarkItem] = []
+    
+    func add(_ landmark: LandmarkItem) {
+        landmarks.append(landmark)
+    }
+    
+    func getAll() -> [LandmarkItem] {
+        landmarks
+    }
+    
+    func clear() {
+        landmarks = []
+    }
+}
+
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     private let wikipediaManager = WikipediaLocationManager()
     private var lastFetchTime: Date?
     private let fetchInterval: TimeInterval = 1  // Reduced from 5 to 1 second
     private let searchRadius: CLLocationDistance = 50
+    private let landmarkCollector = LandmarkCollector()
 
     @Published var location: CLLocationCoordinate2D? = nil
     @Published var locationError: String? = nil
@@ -203,8 +220,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 return loc1.distance(from: userLoc) < loc2.distance(from: userLoc)
             }
         
-        // Filter landmarks that have Wikipedia articles
-        var landmarksWithArticles: [LandmarkItem] = []
+        await landmarkCollector.clear()
         
         for mapItem in nearbyItems {
             guard let itemLocation = mapItem.placemark.location else { continue }
@@ -212,8 +228,8 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             do {
                 let articles = try await self.wikipediaManager.fetchNearbyArticles(
                     coordinate: itemLocation.coordinate,
-                    radius: 10,  // Convert Double to Int
-                    limit: 1      // We only need one article per POI
+                    radius: 10,
+                    limit: 1
                 )
                 
                 if !articles.isEmpty {
@@ -225,9 +241,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                         print("  Coordinates: (\(article.lat), \(article.lon))")
                     }
                     
-                    await MainActor.run {
-                        landmarksWithArticles.append(LandmarkItem(mapItem: mapItem))
-                    }
+                    await landmarkCollector.add(LandmarkItem(mapItem: mapItem))
                 } else {
                     print("No Wikipedia articles found for \(mapItem.name ?? "unknown")")
                 }
@@ -237,9 +251,10 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
         }
         
+        let collectedLandmarks = await landmarkCollector.getAll()
         await MainActor.run {
-            self.nearbyLandmarks = landmarksWithArticles
-            if landmarksWithArticles.isEmpty {
+            self.nearbyLandmarks = collectedLandmarks
+            if collectedLandmarks.isEmpty {
                 self.locationError = "No landmarks with Wikipedia articles found within \(Int(self.searchRadius)) meters"
             } else {
                 self.locationError = nil
