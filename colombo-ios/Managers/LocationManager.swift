@@ -165,20 +165,26 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     private func processSearchResults(response: MKLocalSearch.Response?, error: Error?, userLocation: CLLocationCoordinate2D) async {
-        await MainActor.run {
-            self.isSearching = false
-            
-            if let error = error {
+        if let error = error {
+            await MainActor.run {
+                self.isSearching = false
                 self.locationError = "Search error: \(error.localizedDescription)"
                 self.nearbyLandmarks = []
-                return
             }
+            return
+        }
 
-            guard let response = response else {
+        guard let searchResponse = response else {
+            await MainActor.run {
+                self.isSearching = false
                 self.locationError = "No landmarks found nearby"
                 self.nearbyLandmarks = []
-                return
             }
+            return
+        }
+        
+        await MainActor.run {
+            self.isSearching = false
         }
         
         let userLoc = CLLocation(
@@ -186,7 +192,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             longitude: userLocation.longitude
         )
 
-        let nearbyItems = response!.mapItems
+        let nearbyItems = searchResponse.mapItems
             .filter { mapItem in
                 guard let itemLocation = mapItem.placemark.location else { return false }
                 return itemLocation.distance(from: userLoc) <= self.searchRadius
