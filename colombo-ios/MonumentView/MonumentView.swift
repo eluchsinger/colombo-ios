@@ -144,12 +144,14 @@ struct MonumentView: View {
                     .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
                     .onChange(of: locationManager.location?.latitude) { _, _ in
-                        updateActivityForClosestLandmark(closest)
+                        updateDistanceForClosestLandmark(closest)
                     }
                     .onChange(of: locationManager.location?.longitude) { _, _ in
-                        updateActivityForClosestLandmark(closest)
+                        updateDistanceForClosestLandmark(closest)
                     }
                     .onAppear {
+                        // Initialize with current distance when view appears
+                        updateDistanceForClosestLandmark(closest)
                         activityManager.startTracking(
                             landmarkName: closest.mapItem.name ?? "Unknown Landmark"
                         )
@@ -177,18 +179,16 @@ struct MonumentView: View {
         }
     }
     
-    private func updateActivityForClosestLandmark(_ landmark: LandmarkItem) {
-        guard let location = locationManager.location,
-              let landmarkLocation = landmark.mapItem.placemark.location else {
-            return
+    private func updateDistanceForClosestLandmark(_ landmark: LandmarkItem) {
+        if let location = locationManager.location,
+           let landmarkLocation = landmark.mapItem.placemark.location {
+            let userLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+            let distance = landmarkLocation.distance(from: userLocation)
+            activityManager.updateActivity(
+                landmarkName: landmark.mapItem.name ?? "Unknown Landmark",
+                distance: distance
+            )
         }
-        
-        let userLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
-        let distance = landmarkLocation.distance(from: userLocation)
-        activityManager.updateActivity(
-            landmarkName: landmark.mapItem.name ?? "Unknown Landmark",
-            distance: distance
-        )
     }
 }
 
