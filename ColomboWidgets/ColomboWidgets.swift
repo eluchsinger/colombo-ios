@@ -27,8 +27,9 @@ struct LandmarkActivityWidget: Widget {
                 
                 VStack(spacing: 12) {
                     HStack(spacing: 8) {
-                        Image(systemName: "building.columns.fill")
-                            .foregroundStyle(.blue)
+                        Image("DynamicIslandIcon")
+                            .frame(width: 24, height: 24)
+                            .padding(4)
                         Text(context.state.landmarkName)
                             .font(.headline)
                             .lineLimit(1)
@@ -50,8 +51,9 @@ struct LandmarkActivityWidget: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Image(systemName: "building.columns.fill")
-                        .foregroundStyle(.blue)
+                    Image("DynamicIslandIcon")
+                        .frame(width: 24, height: 24)
+                        .padding(4)
                 }
                 
                 DynamicIslandExpandedRegion(.trailing) {
@@ -66,15 +68,15 @@ struct LandmarkActivityWidget: Widget {
                         .lineLimit(1)
                 }
             } compactLeading: {
-                Image(systemName: "building.columns.fill")
-                    .foregroundStyle(.blue)
+                Image("DynamicIslandIcon").frame(width: 24, height: 24)
+                    .padding(4)
             } compactTrailing: {
                 Text(String(format: "%.0f m", context.state.distance))
                     .font(.callout)
                     .monospacedDigit()
             } minimal: {
-                Image(systemName: "building.columns.fill")
-                    .foregroundStyle(.blue)
+                Image("DynamicIslandIcon").frame(width: 24, height: 24)
+                    .padding(4)
             }
         }
     }
