@@ -28,7 +28,7 @@ struct LandmarkActivityWidget: Widget {
                 VStack(spacing: 12) {
                     HStack(spacing: 8) {
                         Image("DynamicIslandIcon")
-                            .frame(width: 24, height: 24)
+                            .frame(width: 20, height: 20)
                             .padding(4)
                         Text(context.state.landmarkName)
                             .font(.headline)
@@ -50,32 +50,28 @@ struct LandmarkActivityWidget: Widget {
             
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    Image("DynamicIslandIcon")
-                        .frame(width: 24, height: 24)
-                        .padding(4)
-                }
-                
-                DynamicIslandExpandedRegion(.trailing) {
-                    Text(String(format: "%.0f m", context.state.distance))
-                        .foregroundStyle(.secondary)
-                        .font(.callout)
-                }
-                
                 DynamicIslandExpandedRegion(.center) {
-                    Text(context.state.landmarkName)
-                        .font(.headline)
-                        .lineLimit(1)
+                    HStack {
+                        Image("DynamicIslandIcon")
+                        Spacer()
+                        Text(context.state.landmarkName)
+                            .font(.headline)
+                            .lineLimit(1)
+                        Spacer()
+                        Text(String(format: "%.0f m", context.state.distance))
+                            .foregroundStyle(.secondary)
+                            .font(.callout)
+                    }
                 }
             } compactLeading: {
-                Image("DynamicIslandIcon").frame(width: 24, height: 24)
+                Image("DynamicIslandIcon").frame(width: 20, height: 20)
                     .padding(4)
             } compactTrailing: {
                 Text(String(format: "%.0f m", context.state.distance))
                     .font(.callout)
                     .monospacedDigit()
             } minimal: {
-                Image("DynamicIslandIcon").frame(width: 24, height: 24)
+                Image("DynamicIslandIcon").frame(width: 20, height: 20)
                     .padding(4)
             }
         }
