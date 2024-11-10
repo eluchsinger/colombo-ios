@@ -6,7 +6,10 @@ class LandmarkTrackingActivity: ObservableObject {
     private var activity: Activity<LandmarkActivityAttributes>?
     
     func startTracking(landmarkName: String) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            print("❌ Live Activities not enabled")
+            return 
+        }
         
         let attributes = LandmarkActivityAttributes(initialLandmarkName: landmarkName)
         let contentState = LandmarkActivityAttributes.ContentState(
@@ -15,13 +18,14 @@ class LandmarkTrackingActivity: ObservableObject {
         )
         
         do {
-            let staleDate = Date().addingTimeInterval(24 * 60 * 60) // 24 hours from now
+            let staleDate = Date().addingTimeInterval(30 * 60) // Reduced to 30 minutes for testing
             activity = try Activity.request(
                 attributes: attributes,
                 content: .init(state: contentState, staleDate: staleDate)
             )
+            print("✅ Live Activity started for \(landmarkName)")
         } catch {
-            print("Error starting activity: \(error)")
+            print("❌ Error starting activity: \(error)")
         }
     }
     
@@ -33,6 +37,7 @@ class LandmarkTrackingActivity: ObservableObject {
             )
             
             await activity?.update(.init(state: updatedState, staleDate: nil))
+            print("📍 Updated activity: \(landmarkName) - \(distance)m")
         }
     }
     
