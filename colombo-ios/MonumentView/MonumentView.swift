@@ -4,6 +4,7 @@ import SwiftUI
 struct MonumentView: View {
     @Binding var isLoggedIn: Bool
     @StateObject private var locationManager = LocationManager()
+    @StateObject private var activityManager = LandmarkTrackingActivity()
     @State private var selectedLandmark: LandmarkItem?
     // Removed visitResponse as it's no longer needed
 
@@ -142,6 +143,20 @@ struct MonumentView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
+                    .onChange(of: locationManager.location?.latitude) { _, _ in
+                        updateActivityForClosestLandmark(closest)
+                    }
+                    .onChange(of: locationManager.location?.longitude) { _, _ in
+                        updateActivityForClosestLandmark(closest)
+                    }
+                    .onAppear {
+                        activityManager.startTracking(
+                            landmarkName: closest.mapItem.name ?? "Unknown Landmark"
+                        )
+                    }
+                    .onDisappear {
+                        activityManager.stopTracking()
+                    }
                 }
 
                 if !remainingLandmarks.isEmpty {
@@ -160,6 +175,20 @@ struct MonumentView: View {
             }
             .frame(maxWidth: .infinity, alignment: .top)
         }
+    }
+    
+    private func updateActivityForClosestLandmark(_ landmark: LandmarkItem) {
+        guard let location = locationManager.location,
+              let landmarkLocation = landmark.mapItem.placemark.location else {
+            return
+        }
+        
+        let userLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
+        let distance = landmarkLocation.distance(from: userLocation)
+        activityManager.updateActivity(
+            landmarkName: landmark.mapItem.name ?? "Unknown Landmark",
+            distance: distance
+        )
     }
 }
 
